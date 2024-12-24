@@ -464,7 +464,7 @@ void sensor_calibrate_mag(void)
 		LOG_INF("%.5f %.5f %.5f %.5f", (double)magBAinv[0][i], (double)magBAinv[1][i],(double)magBAinv[2][i], (double)magBAinv[3][i]);
 	if (sensor_calibration_validate_mag())
 	{
-//		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
+		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
 		LOG_INF("Restoring previous calibration");
 		memcpy(magBAinv, last_magBAinv, sizeof(magBAinv)); // restore last calibration
 		LOG_INF("Magnetometer matrix:");
@@ -1087,6 +1087,7 @@ void sensor_6_sideBias(const struct i2c_dt_spec *dev_i2c)
 	const float THRESHOLD_ACC = 0.05f;
 	int resttime = 0;
 
+	mag_progress = 0; // reusing ata, so guarantee cleared mag progress
 	memset(ata, 0, sizeof(ata));
 	norm_sum = 0.0;
 	sample_count = 0.0;
