@@ -857,8 +857,8 @@ void main_imu_thread(void)
 			// Check packet processing
 			if (processed_packets == 0)
 			{
-				LOG_ERR("No packets processed");
-				if (++packet_errors == 10)
+				LOG_WRN("No packets processed");
+				if (++packet_errors == 5)
 				{
 					LOG_ERR("Packet error threshold exceeded");
 					set_status(SYS_STATUS_SENSOR_ERROR, true); // kind of redundant
