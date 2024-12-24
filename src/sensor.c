@@ -362,6 +362,9 @@ void sensor_setup_WOM(void)
 
 void sensor_calibrate_imu(void)
 {
+//	float last_accelBias[3], last_gyroBias[3];
+//	memcpy(last_accelBias, accelBias, sizeof(accelBias));
+//	memcpy(last_gyroBias, gyroBias, sizeof(gyroBias));
 	LOG_INF("Calibrating main accelerometer and gyroscope zero rate offset");
 	LOG_INF("Rest the device on a stable surface");
 
@@ -394,6 +397,14 @@ void sensor_calibrate_imu(void)
 	if (sensor_calibration_validate())
 	{
 		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
+//		LOG_INF("Restoring previous calibration");
+//		memcpy(accelBias, last_accelBias, sizeof(accelBias)); // restore last calibration
+//		memcpy(gyroBias, last_gyroBias, sizeof(gyroBias)); // restore last calibration
+//#if !CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
+//		LOG_INF("Accelerometer bias: %.5f %.5f %.5f", (double)accelBias[0], (double)accelBias[1], (double)accelBias[2]);
+//#endif
+//		LOG_INF("Gyroscope bias: %.5f %.5f %.5f", (double)gyroBias[0], (double)gyroBias[1], (double)gyroBias[2]);
+//		sensor_calibration_validate(); // additionally verify old calibration
 		return;
 	}
 
@@ -405,36 +416,65 @@ void sensor_calibrate_imu(void)
 #if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
 void sensor_calibrate_6_side(void)
 {
+//	float last_accBAinv[4][3];
+//	memcpy(last_accBAinv, accBAinv, sizeof(accBAinv));
 	LOG_INF("Calibrating main accelerometer 6-side offset");
 	LOG_INF("Rest the device on a stable surface");
 
 	sensor_calibration_clear_6_side();
 	sensor_6_sideBias(&sensor_imu_dev);
-
 	sys_write(MAIN_ACC_6_BIAS_ID, &retained.accBAinv, accBAinv, sizeof(accBAinv));
 	LOG_INF("Accelerometer matrix:");
 	for (int i = 0; i < 3; i++)
 		LOG_INF("%.5f %.5f %.5f %.5f", (double)accBAinv[0][i], (double)accBAinv[1][i], (double)accBAinv[2][i], (double)accBAinv[3][i]);
+	if (sensor_calibration_validate_6_side())
+	{
+//		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
+//		LOG_INF("Restoring previous calibration");
+//		memcpy(accBAinv, last_accBAinv, sizeof(accBAinv)); // restore last calibration
+//		LOG_INF("Accelerometer matrix:");
+//		for (int i = 0; i < 3; i++)
+//			LOG_INF("%.5f %.5f %.5f %.5f", (double)accBAinv[0][i], (double)accBAinv[1][i], (double)accBAinv[2][i], (double)accBAinv[3][i]);
+//		sensor_calibration_validate_6_side(); // additionally verify old calibration
+		return;
+	}
 
 	LOG_INF("Finished calibration");
+	set_led(SYS_LED_PATTERN_ONESHOT_COMPLETE, SYS_LED_PRIORITY_SENSOR);
 }
 #endif
 
 void sensor_calibrate_mag(void)
 {
+	float last_magBAinv[4][3];
+	memcpy(last_magBAinv, magBAinv, sizeof(magBAinv));
 	LOG_INF("Calibrating magnetometer hard/soft iron offset");
+
 	magneto_current_calibration(magBAinv, ata, norm_sum, sample_count); // 25ms
-	sys_write(MAIN_MAG_BIAS_ID, &retained.magBAinv, magBAinv, sizeof(magBAinv));
-	LOG_INF("Magnetometer matrix:");
-	for (int i = 0; i < 3; i++)
-		LOG_INF("%.5f %.5f %.5f %.5f", (double)magBAinv[0][i], (double)magBAinv[1][i],(double)magBAinv[2][i], (double)magBAinv[3][i]);
-	LOG_INF("Finished calibration");
 	//mag_progress |= 1 << 7;
 	mag_progress = 0;
 	// clear data
 	memset(ata, 0, sizeof(ata)); // TODO: does this work??
 	norm_sum = 0.0;
 	sample_count = 0.0;
+	sys_write(MAIN_MAG_BIAS_ID, &retained.magBAinv, magBAinv, sizeof(magBAinv));
+	LOG_INF("Magnetometer matrix:");
+	for (int i = 0; i < 3; i++)
+		LOG_INF("%.5f %.5f %.5f %.5f", (double)magBAinv[0][i], (double)magBAinv[1][i],(double)magBAinv[2][i], (double)magBAinv[3][i]);
+	if (sensor_calibration_validate_mag())
+	{
+//		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
+		LOG_INF("Restoring previous calibration");
+		memcpy(magBAinv, last_magBAinv, sizeof(magBAinv)); // restore last calibration
+		LOG_INF("Magnetometer matrix:");
+		for (int i = 0; i < 3; i++)
+			LOG_INF("%.5f %.5f %.5f %.5f", (double)magBAinv[0][i], (double)magBAinv[1][i],(double)magBAinv[2][i], (double)magBAinv[3][i]);
+		sensor_calibration_validate_mag(); // additionally verify old calibration
+		return;
+	}
+
+	LOG_INF("Finished calibration");
+	set_led(SYS_LED_PATTERN_ONESHOT_COMPLETE, SYS_LED_PRIORITY_SENSOR);
 }
 
 int sensor_calibration_validate(void)
@@ -445,6 +485,42 @@ int sensor_calibration_validate(void)
 		sensor_calibration_clear();
 		LOG_WRN("Invalidated calibration");
 		LOG_WRN("The IMU may be damaged or calibration was not completed properly");
+		return -1;
+	}
+	return 0;
+}
+
+int sensor_calibration_validate_6_side(void)
+{
+	float zero[3] = {0};
+	float diagonal[3];
+	for (int i = 0; i < 3; i++)
+		diagonal[i] = accBAinv[i + 1][i];
+	float magnitude = v_avg(diagonal);
+	float average[3] = {magnitude, magnitude, magnitude};
+	if (!v_epsilon(accBAinv[0], zero, 0.5) || !v_epsilon(diagonal, average, magnitude * 0.1)) // TODO: this is using v_epsilon to compare. Check accel is <0.5G and diagonals are within 10%
+	{
+		sensor_calibration_clear_6_side();
+		LOG_WRN("Invalidated calibration");
+		LOG_WRN("The IMU may be damaged or calibration was not completed properly");
+		return -1;
+	}
+	return 0;
+}
+
+int sensor_calibration_validate_mag(void)
+{
+	float zero[3] = {0};
+	float diagonal[3];
+	for (int i = 0; i < 3; i++)
+		diagonal[i] = magBAinv[i + 1][i];
+	float magnitude = v_avg(diagonal);
+	float average[3] = {magnitude, magnitude, magnitude};
+	if (!v_epsilon(magBAinv[0], zero, 1) || !v_epsilon(diagonal, average, magnitude * 0.2)) // TODO: this is using v_epsilon to compare. Check offset is <1 unit and diagonals are within 20%
+	{
+		sensor_calibration_clear_mag();
+		LOG_WRN("Invalidated calibration");
+		LOG_WRN("The magnetometer may be damaged or calibration was not completed properly");
 		return -1;
 	}
 	return 0;
@@ -475,6 +551,22 @@ void sensor_calibration_clear(void)
 	sensor_calibration_fusion_invalidate();
 }
 
+#if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
+void sensor_calibration_clear_6_side(void)
+{
+	memset(accBAinv, 0, sizeof(accBAinv));
+	for (int i = 0; i < 3; i++) // set identity matrix
+		accBAinv[i + 1][i] = 1;
+	sys_write(MAIN_ACC_6_BIAS_ID, &retained.accBAinv, accBAinv, sizeof(accBAinv));
+}
+#endif
+
+void sensor_calibration_clear_mag(void)
+{
+	memset(magBAinv, 0, sizeof(magBAinv)); // zeroed matrix will disable magnetometer in fusion
+	sys_write(MAIN_MAG_BIAS_ID, &retained.magBAinv, magBAinv, sizeof(magBAinv));
+}
+
 void sensor_request_calibration(void)
 {
 	accelBias[0] = NAN;
@@ -484,12 +576,6 @@ void sensor_request_calibration(void)
 }
 
 #if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
-void sensor_calibration_clear_6_side(void)
-{
-	memset(accBAinv, 0, sizeof(accBAinv));
-	sys_write(MAIN_ACC_6_BIAS_ID, &retained.accBAinv, accBAinv, sizeof(accBAinv));
-}
-
 void sensor_request_calibration_6_side(void)
 {
 	accBAinv[0][0] = NAN;
@@ -592,7 +678,12 @@ int main_imu_init(void)
 	// Calibrate 6-side
 	if (isnan(accBAinv[0][0]))
 		sensor_calibrate_6_side();
+	else
+		sensor_calibration_validate_6_side();
 #endif
+
+	// Verfify magnetometer calibration
+	sensor_calibration_validate_mag();
 
 	LOG_INF("Using %s", fusion_names[fusion_id]);
 	LOG_INF("Initialized fusion");
@@ -873,7 +964,6 @@ void main_imu_thread(void)
 				if (mag_progress == 0b111111) // Save magnetometer calibration while idling
 				{
 					sensor_calibrate_mag();
-					set_led(SYS_LED_PATTERN_ONESHOT_COMPLETE, SYS_LED_PRIORITY_SENSOR);
 				}
 				else // only enough time to do one of the two
 				{

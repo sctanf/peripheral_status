@@ -89,6 +89,11 @@ bool v_epsilon(const float *a, const float *b, float eps)
 	return sqrtf(x*x + y*y + z*z) < eps;
 }
 
+float v_avg(const float *a)
+{
+	return (a[0] + a[1] + a[2]) / 3;
+}
+
 // TODO: does this need to be moved?
 void apply_BAinv(float xyz[3], float BAinv[4][3])
 {
