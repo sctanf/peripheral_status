@@ -516,7 +516,7 @@ int sensor_calibration_validate_mag(void)
 		diagonal[i] = magBAinv[i + 1][i];
 	float magnitude = v_avg(diagonal);
 	float average[3] = {magnitude, magnitude, magnitude};
-	if (!v_epsilon(magBAinv[0], zero, 1) || !v_epsilon(diagonal, average, magnitude * 0.2)) // TODO: this is using v_epsilon to compare. Check offset is <1 unit and diagonals are within 20%
+	if (!v_epsilon(magBAinv[0], zero, 1) || !v_epsilon(diagonal, average, MAX(magnitude * 0.2, 0.1f))) // TODO: this is using v_epsilon to compare. Check offset is <1 unit and diagonals are within 20%
 	{
 		sensor_calibration_clear_mag();
 		LOG_WRN("Invalidated calibration");
