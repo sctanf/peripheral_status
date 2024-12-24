@@ -450,6 +450,7 @@ void sensor_calibrate_mag(void)
 	memcpy(last_magBAinv, magBAinv, sizeof(magBAinv));
 	LOG_INF("Calibrating magnetometer hard/soft iron offset");
 
+	// max allocated 1072 bytes
 	magneto_current_calibration(magBAinv, ata, norm_sum, sample_count); // 25ms
 	//mag_progress |= 1 << 7;
 	mag_progress = 0;
@@ -739,7 +740,7 @@ void main_imu_thread(void)
 			connection_update_sensor_temp(temp);
 
 			// Read gyroscope (FIFO)
-			uint8_t rawData[512]; // Limit FIFO read to 512 bytes
+			uint8_t *rawData = (uint8_t *)k_malloc(512); // Limit FIFO read to 512 bytes
 			uint16_t packets = sensor_imu->fifo_read(&sensor_imu_dev, rawData, 512); // TODO: name this better?
 			LOG_DBG("IMU packet count: %u", packets);
 
@@ -849,6 +850,9 @@ void main_imu_thread(void)
 				processed_packets++;
 			}
 			sensor_fusion->update(z, a, m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
+
+			// Free the FIFO buffer
+			k_free(rawData);
 
 			// Check packet processing
 			if (processed_packets == 0)

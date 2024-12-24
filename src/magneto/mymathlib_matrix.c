@@ -2,7 +2,7 @@
 #include "mymathlib_matrix.h"
 
 #include <math.h>
-#include <malloc.h>
+#include <zephyr/kernel.h>
 #include <string.h>
 #include <float.h>
 
@@ -550,7 +550,7 @@ int Hessenberg_Form_Elementary(double *A, double *S, int n)
 
    // Allocate working memory
 
-   perm = (int *)malloc(n * sizeof(int));
+   perm = (int *)k_malloc(n * sizeof(int));
    if (perm == NULL)
       return -1; // not enough memory
 
@@ -604,7 +604,7 @@ int Hessenberg_Form_Elementary(double *A, double *S, int n)
 
    Hessenberg_Elementary_Transform(A, S, perm, n);
 
-   free(perm);
+   k_free(perm);
    return 0;
 }
 
