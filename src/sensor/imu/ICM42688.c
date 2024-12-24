@@ -267,30 +267,37 @@ int icm_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float gy
 
 uint16_t icm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len)
 {
-	uint8_t rawCount[2];
-	int err = i2c_burst_read_dt(dev_i2c, ICM42688_FIFO_COUNTH, &rawCount[0], 2);
-	uint16_t count = (uint16_t)(rawCount[0] << 8 | rawCount[1]); // Turn the 16 bits into a unsigned 16-bit value
-	uint16_t packets = count / 8; // FIFO packet size is 8 bytes for Packet 2
-	uint16_t limit = len / 8;
-	if (packets > limit)
+	int err = 0;
+	uint16_t total = 0;
+	uint16_t packets = UINT16_MAX;
+	while (packets > 0 && len >= 8)
 	{
-		packets = limit;
-		count = packets * 8;
+		uint8_t rawCount[2];
+		err |= i2c_burst_read_dt(dev_i2c, ICM42688_FIFO_COUNTH, &rawCount[0], 2);
+		uint16_t count = (uint16_t)(rawCount[0] << 8 | rawCount[1]); // Turn the 16 bits into a unsigned 16-bit value
+		packets = count	/ 8; // FIFO packet size is 8 bytes for Packet 2
+		uint16_t limit = len / 8;
+		if (packets > limit)
+		{
+			packets = limit;
+			count = packets * 8;
+		}
+		uint16_t offset = 0;
+		uint8_t addr = ICM42688_FIFO_DATA;
+		err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
+		while (count > 0)
+		{
+			err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
+			offset += 248;
+			count = count > 248 ? count - 248 : 0;
+		}
+		if (err)
+			LOG_ERR("I2C error");
+		data += packets * 8;
+		len -= packets * 8;
+		total += packets;
 	}
-	uint16_t offset = 0;
-	uint8_t addr = ICM42688_FIFO_DATA;
-	err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
-	while (count > 0)
-	{
-		err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
-		offset += 248;
-		count = count > 248 ? count - 248 : 0;
-	}
-	if (err)
-		LOG_ERR("I2C error");
-	else if (packets != 0) // keep reading until FIFO is empty
-		packets += icm_fifo_read(dev_i2c, &data[packets * 8], len - packets * 8);
-	return packets;
+	return total;
 }
 
 int icm_fifo_process(uint16_t index, uint8_t *data, float g[3])

@@ -227,19 +227,26 @@ int lsm6dso_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, floa
 
 uint16_t lsm6dso_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len)
 {
-	uint8_t rawCount[2];
-	int err = i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_STATUS1, &rawCount[0], 2);
-	uint16_t count = (uint16_t)((rawCount[1] & 1) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-	uint16_t limit = len / 6;
-	if (count > limit)
-		count = limit;
-	for (int i = 0; i < count; i++)
-		err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_DATA_OUT_TAG, &data[i * 7], 7); // Packet size is always 7 bytes
-	if (err)
-		LOG_ERR("I2C error");
-	else if (count != 0) // keep reading until FIFO is empty
-		count += lsm6dso_fifo_read(dev_i2c, &data[count * 7], len - count * 7);
-	return count;
+	int err = 0;
+	uint16_t total = 0;
+	uint16_t count = UINT16_MAX;
+	while (count > 0 && len >= 7)
+	{
+		uint8_t rawCount[2];
+		err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_STATUS1, &rawCount[0], 2);
+		count = (uint16_t)((rawCount[1] & 1) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
+		uint16_t limit = len / 7;
+		if (count > limit)
+			count = limit;
+		for (int i = 0; i < count; i++)
+			err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_DATA_OUT_TAG, &data[i * 7], 7); // Packet size is always 7 bytes
+		if (err)
+			LOG_ERR("I2C error");
+		data += count * 7;
+		len -= count * 7;
+		total += count;
+	}
+	return total;
 }
 
 void lsm6dso_setup_WOM(const struct i2c_dt_spec *dev_i2c)

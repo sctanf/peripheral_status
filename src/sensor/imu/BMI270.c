@@ -225,25 +225,35 @@ int bmi_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float gy
 
 uint16_t bmi_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len)
 {
-	uint8_t rawCount[2];
-	int err = i2c_burst_read_dt(dev_i2c, BMI270_FIFO_LENGTH_0, &rawCount[0], 2);
-	uint16_t count = (uint16_t)((rawCount[1] & 1) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-	uint16_t packets = count / 6; // FIFO packet size is 6 bytes for gyro only
-	uint16_t limit = len / 6;
-	if (packets > limit)
-		packets = limit;
-	uint16_t offset = 0;
-	while (count > 0)
+	int err = 0;
+	uint16_t total = 0;
+	uint16_t packets = UINT16_MAX;
+	while (packets > 0 && len >= 6)
 	{
-		err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_DATA, &data[offset], count > 64 ? 64 : count); // Read less than 255 at a time (for nRF52832)
-		offset += 64;
-		count = count > 64 ? count - 64 : 0;
+		uint8_t rawCount[2];
+		err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_LENGTH_0, &rawCount[0], 2);
+		uint16_t count = (uint16_t)((rawCount[1] & 1) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
+		packets = count / 6; // FIFO packet size is 6 bytes for gyro only
+		uint16_t limit = len / 6;
+		if (packets > limit)
+		{
+			packets = limit;
+			count = packets * 6;
+		}
+		uint16_t offset = 0;
+		while (count > 0)
+		{
+			err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_DATA, &data[offset], count > 64 ? 64 : count); // Read less than 255 at a time (for nRF52832)
+			offset += 64;
+			count = count > 64 ? count - 64 : 0;
+		}
+		if (err)
+			LOG_ERR("I2C error");
+		data += packets * 6;
+		len -= packets * 6;
+		total += packets;
 	}
-	if (err)
-		LOG_ERR("I2C error");
-	else if (packets != 0) // keep reading until FIFO is empty
-		packets += bmi_fifo_read(dev_i2c, &data[packets * 6], len - packets * 6);
-	return packets;
+	return total;
 }
 
 int bmi_fifo_process(uint16_t index, uint8_t *data, float g[3])
