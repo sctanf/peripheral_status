@@ -63,15 +63,18 @@ static const char *meow_punctuations[] = {
 
 static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
+	const struct log_backend *backend = log_backend_get_by_name("log_backend_uart");
 	switch (status)
 	{
 	case USB_DC_CONNECTED:
 		set_status(SYS_STATUS_USB_CONNECTED, true);
+		log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
 		k_thread_create(&console_thread_id, console_thread_id_stack, K_THREAD_STACK_SIZEOF(console_thread_id_stack), (k_thread_entry_t)console_thread, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
 		break;
 	case USB_DC_DISCONNECTED:
 		set_status(SYS_STATUS_USB_CONNECTED, false);
 		k_thread_abort(&console_thread_id);
+		log_backend_disable(backend);
 		break;
 	default:
 		LOG_DBG("status %u unhandled", status);
