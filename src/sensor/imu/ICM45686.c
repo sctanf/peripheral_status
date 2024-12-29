@@ -14,10 +14,15 @@ static uint8_t last_gyro_odr = 0xff;
 static const float clock_reference = 32000;
 static float clock_scale = 1; // ODR is scaled by clock_rate/clock_reference
 
+static bool fifo_primed = false;
+
 LOG_MODULE_REGISTER(ICM45686, LOG_LEVEL_DBG);
 
 int icm45_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
+	// special handling of unknown fifo corruption
+	fifo_primed = false;
+
 	int err = 0;
 	if (clock_rate > 0)
 	{
@@ -236,21 +241,45 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_COUNT_0, &rawCount[0], 2);
 		packets = (uint16_t)(rawCount[1] << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-		uint16_t count = packets * 8; // FIFO packet size is 8 bytes for Gyro-only
+//		uint16_t count = packets * 8; // FIFO packet size is 8 bytes for Gyro-only
 		uint16_t limit = len / 8;
 		if (packets > limit)
-		{
+//		{
 			packets = limit;
-			count = packets * 8;
-		}
-		uint16_t offset = 0;
-		uint8_t addr = ICM45686_FIFO_DATA;
-		err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
-		while (count > 0)
+//			count = packets * 8;
+//		}
+//		uint16_t offset = 0;
+//		uint8_t addr = ICM45686_FIFO_DATA;
+//		err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
+//		while (count > 0)
+//		{
+//			err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
+//			offset += 248;
+//			count = count > 248 ? count - 248 : 0;
+//		}
+		// specially handle packet error from unknown fifo corruption
+		// TODO: this will discard some data in fifo, however the data is actually recoverable.
+		for (int i = 0; i < packets; i++)
 		{
-			err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
-			offset += 248;
-			count = count > 248 ? count - 248 : 0;
+			err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_DATA, &data[i * 8], 8); // must check each packet as its coming in
+			// header should initially be 0x00, and 0x20 once gyro data is being written correctly
+			if (!fifo_primed && data[i * 8] == 0x20) // wait for first valid packet
+			{
+				LOG_INF("FIFO ready");
+				fifo_primed = true;
+			}
+			else if (data[i * 8] != 0x20 && fifo_primed) // immediately reset fifo on invalid packet
+			{
+				LOG_ERR("FIFO error on packet %d/%d", i, packets);
+				LOG_WRN("Discarded %d packets", packets - i);
+				fifo_primed = false;
+				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x00); // stop FIFO
+				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x00); // reset FIFO config
+//				k_busy_wait(250);
+				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x40 | 0b000111); // set FIFO Stream mode, set FIFO depth to 2K bytes
+				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x05); // begin FIFO stream (FIFO gyro only)
+//				k_busy_wait(250);
+			}
 		}
 		if (err)
 			LOG_ERR("I2C error");
