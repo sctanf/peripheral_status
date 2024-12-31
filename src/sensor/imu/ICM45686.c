@@ -231,6 +231,8 @@ int icm45_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float 
 	return 0;
 }
 
+static const uint8_t empty[8] = {[0 ... 7] = 0x7f};
+
 uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len) // TODO: check if working
 {
 	int err = 0;
@@ -238,6 +240,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	uint16_t packets = UINT16_MAX;
 	while (packets > 0 && len >= 8)
 	{
+		memset(data, 0x7F, 8); // Empty packet is 7F filled
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_COUNT_0, &rawCount[0], 2);
 		packets = (uint16_t)(rawCount[1] << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
@@ -268,7 +271,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 				LOG_INF("FIFO ready");
 				fifo_primed = true;
 			}
-			else if (data[i * 8] != 0x20 && fifo_primed) // immediately reset fifo on invalid packet
+			else if (data[i * 8] != 0x20 && fifo_primed && !memcmp(&data[i * 8], empty, 8)) // immediately reset fifo on invalid packet
 			{
 				LOG_ERR("FIFO error on packet %d/%d", i, packets);
 				LOG_WRN("Discarded %d packets", packets - i);
