@@ -39,13 +39,59 @@ static enum sys_led_pattern current_led_pattern;
 static int current_priority;
 static int led_pattern_state;
 
-static int led_gpio_init(void)
+static int led_pin_init(void)
 {
 	gpio_pin_configure_dt(&led, GPIO_OUTPUT);
 	return 0;
 }
 
-SYS_INIT(led_gpio_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+
+// TODO:
+#if LED_RGB_COLOR
+static float led_pwm_period[4][3] = {
+	{0.3, 0.3, 0.3}, // Default
+	{0.2, 0.8, 0}, // Success
+	{0.8, 0.2, 0}, // Error
+	{0.5, 0.5, 0}, // Charging
+};
+#elif LED_TRI_COLOR
+static float led_pwm_period[4][3] = {
+	{0, 0, 1}, // Default
+	{0, 1, 0}, // Success
+	{1, 0, 0}, // Error
+	{0.5, 0.5, 0}, // Charging
+};
+#elif LED_DUAL_COLOR
+static float led_pwm_period[4][2] = {
+	{0, 1}, // Default
+	{0, 1}, // Success
+	{1, 0}, // Error
+	{0.5, 0.5}, // Charging
+};
+#endif
+
+// Using brightness and value if PWM is supported, otherwise value is coerced to on/off
+// TODO: use computed constants for high/low brightness and color values
+static void led_pin_set(enum sys_led_color color, float brightness, float value)
+{
+#if PWM_LED_EXISTS
+	// only supporting color if PWM is supported
+	pwm_set_pulse_dt(&pwm_led, pwm_led.period * value * brightness);
+#else
+	gpio_pin_set_dt(&led, value > 0.5f);
+#endif
+}
+
+// reset all led pins
+static void led_pin_reset()
+{
+#if PWM_LED_EXISTS
+	pwm_set_pulse_dt(&pwm_led, 0);
+#endif
+	led_pin_init(); // reinit led
+	gpio_pin_set_dt(&led, 0);
+}
 #endif
 
 void set_led(enum sys_led_pattern led_pattern, int priority)
@@ -69,11 +115,7 @@ void set_led(enum sys_led_pattern led_pattern, int priority)
 	led_pattern_state = 0;
 	if (current_led_pattern <= SYS_LED_PATTERN_OFF)
 	{
-#if PWM_LED_EXISTS
-		pwm_set_pulse_dt(&pwm_led, 0);
-#endif
-		led_gpio_init(); // reinit led
-		gpio_pin_set_dt(&led, 0);
+		led_pin_reset();
 		k_thread_suspend(led_thread_id);
 	}
 	else if (k_current_get() != led_thread_id) // do not suspend if called from thread
@@ -96,37 +138,36 @@ static void led_thread(void)
 #else
 	while (1)
 	{
-#if PWM_LED_EXISTS
-		pwm_set_pulse_dt(&pwm_led, 0);
-#endif
-		led_gpio_init(); // reinit led
-		gpio_pin_set_dt(&led, 0);
+		led_pin_reset();
 		switch (current_led_pattern)
 		{
 		case SYS_LED_PATTERN_ON:
-			gpio_pin_set_dt(&led, 1);
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, 1);
 			k_thread_suspend(led_thread_id);
 			break;
 		case SYS_LED_PATTERN_SHORT:
 			led_pattern_state = (led_pattern_state + 1) % 2;
-			gpio_pin_set_dt(&led, led_pattern_state);
+//			gpio_pin_set_dt(&led, led_pattern_state);
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, led_pattern_state);
 			k_msleep(led_pattern_state == 1 ? 100 : 900);
 			break;
 		case SYS_LED_PATTERN_LONG:
-		case SYS_LED_PATTERN_ERROR_D:
 			led_pattern_state = (led_pattern_state + 1) % 2;
-			gpio_pin_set_dt(&led, led_pattern_state);
+//			gpio_pin_set_dt(&led, led_pattern_state);
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, led_pattern_state);
 			k_msleep(500);
 			break;
 		case SYS_LED_PATTERN_FLASH:
 			led_pattern_state = (led_pattern_state + 1) % 2;
-			gpio_pin_set_dt(&led, led_pattern_state);
+//			gpio_pin_set_dt(&led, led_pattern_state);
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, led_pattern_state);
 			k_msleep(200);
 			break;
 
 		case SYS_LED_PATTERN_ONESHOT_POWERON:
 			led_pattern_state++;
-			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+//			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, !(led_pattern_state % 2));
 			if (led_pattern_state == 7)
 				set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_HIGHEST);
 			else
@@ -134,13 +175,17 @@ static void led_thread(void)
 			break;
 		case SYS_LED_PATTERN_ONESHOT_POWEROFF:
 			if (led_pattern_state++ > 0)
-#if PWM_LED_EXISTS
-				pwm_set_pulse_dt(&pwm_led, pwm_led.period * (202 - led_pattern_state) / 200);
-#else
-				gpio_pin_set_dt(&led, 202 - led_pattern_state);
-#endif
+//#if PWM_LED_EXISTS
+//				pwm_set_pulse_dt(&pwm_led, pwm_led.period * (202 - led_pattern_state) / 200);
+//				led_pin_set(SYS_LED_COLOR_DEFAULT, 1, (202 - led_pattern_state) / 200.f);
+//#else
+//				gpio_pin_set_dt(&led, 202 - led_pattern_state);
+//				led_pin_set(SYS_LED_COLOR_DEFAULT, 1, 202 - led_pattern_state);
+//#endif
+				led_pin_set(SYS_LED_COLOR_DEFAULT, (202 - led_pattern_state) / 200.f, 202 - led_pattern_state);
 			else
-				gpio_pin_set_dt(&led, 0);
+//				gpio_pin_set_dt(&led, 0);
+				led_pin_set(SYS_LED_COLOR_DEFAULT, 1, 0);
 			if (led_pattern_state == 202)
 				set_led(SYS_LED_PATTERN_OFF_FORCE, SYS_LED_PRIORITY_HIGHEST);
 			else if (led_pattern_state == 1)
@@ -150,7 +195,8 @@ static void led_thread(void)
 			break;
 		case SYS_LED_PATTERN_ONESHOT_PROGRESS:
 			led_pattern_state++;
-			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+//			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+			led_pin_set(SYS_LED_COLOR_SUCCESS, 1, !(led_pattern_state % 2));
 			if (led_pattern_state == 5)
 				set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_HIGHEST);
 			else
@@ -158,7 +204,8 @@ static void led_thread(void)
 			break;
 		case SYS_LED_PATTERN_ONESHOT_COMPLETE:
 			led_pattern_state++;
-			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+//			gpio_pin_set_dt(&led, !(led_pattern_state % 2));
+			led_pin_set(SYS_LED_COLOR_SUCCESS, 1, !(led_pattern_state % 2));
 			if (led_pattern_state == 9)
 				set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_HIGHEST);
 			else
@@ -166,51 +213,64 @@ static void led_thread(void)
 			break;
 
 		case SYS_LED_PATTERN_ON_PERSIST:
-#if PWM_LED_EXISTS
-			pwm_set_pulse_dt(&pwm_led, pwm_led.period / 5); // 20% duty cycle, should look like ~50% brightness
-#else
-			gpio_pin_set_dt(&led, 1);
-#endif
+//#if PWM_LED_EXISTS
+//			pwm_set_pulse_dt(&pwm_led, pwm_led.period / 5); // 20% duty cycle, should look like ~50% brightness
+//#else
+//			gpio_pin_set_dt(&led, 1);
+//#endif
+			led_pin_set(SYS_LED_COLOR_SUCCESS, 0.2, 1);
 			k_thread_suspend(led_thread_id);
 			break;
 		case SYS_LED_PATTERN_LONG_PERSIST:
 			led_pattern_state = (led_pattern_state + 1) % 2;
-#if PWM_LED_EXISTS
-			pwm_set_pulse_dt(&pwm_led, led_pattern_state ? pwm_led.period / 5 : 0); // 20% duty cycle, should look like ~50% brightness
-#else
-			gpio_pin_set_dt(&led, led_pattern_state);
-#endif
+//#if PWM_LED_EXISTS
+//			pwm_set_pulse_dt(&pwm_led, led_pattern_state ? pwm_led.period / 5 : 0); // 20% duty cycle, should look like ~50% brightness
+//#else
+//			gpio_pin_set_dt(&led, led_pattern_state);
+//#endif
+			led_pin_set(SYS_LED_COLOR_CHARGING, 0.2, led_pattern_state);
 			k_msleep(500);
 			break;
 		case SYS_LED_PATTERN_PULSE_PERSIST:
 			led_pattern_state = (led_pattern_state + 1) % 1000;
 			float led_value = sinf(led_pattern_state * (M_PI / 1000));
-#if PWM_LED_EXISTS
-			pwm_set_pulse_dt(&pwm_led, pwm_led.period * led_value);
-#else
-			gpio_pin_set_dt(&led, led_value > 0.5f);
-#endif
+//#if PWM_LED_EXISTS
+//			pwm_set_pulse_dt(&pwm_led, pwm_led.period * led_value);
+//#else
+//			gpio_pin_set_dt(&led, led_value > 0.5f);
+//#endif
+			led_pin_set(SYS_LED_COLOR_CHARGING, 1, led_value);
 			k_msleep(5);
 			break;
 		case SYS_LED_PATTERN_ACTIVE_PERSIST: // off duration first because the device may turn on multiple times rapidly and waste battery power
 			led_pattern_state = (led_pattern_state + 1) % 2;
-			gpio_pin_set_dt(&led, !led_pattern_state);
+//			gpio_pin_set_dt(&led, !led_pattern_state);
+			led_pin_set(SYS_LED_COLOR_DEFAULT, 1, !led_pattern_state);
 			k_msleep(led_pattern_state ? 9700 : 300);
 			break;
 
 		case SYS_LED_PATTERN_ERROR_A: // TODO: should this use 20% duty cycle?
 			led_pattern_state = (led_pattern_state + 1) % 10;
-			gpio_pin_set_dt(&led, led_pattern_state < 4 && led_pattern_state % 2);
+//			gpio_pin_set_dt(&led, led_pattern_state < 4 && led_pattern_state % 2);
+			led_pin_set(SYS_LED_COLOR_ERROR, 1, led_pattern_state < 4 && led_pattern_state % 2);
 			k_msleep(500);
 			break;
 		case SYS_LED_PATTERN_ERROR_B:
 			led_pattern_state = (led_pattern_state + 1) % 10;
-			gpio_pin_set_dt(&led, led_pattern_state < 6 && led_pattern_state % 2);
+//			gpio_pin_set_dt(&led, led_pattern_state < 6 && led_pattern_state % 2);
+			led_pin_set(SYS_LED_COLOR_ERROR, 1, led_pattern_state < 6 && led_pattern_state % 2);
 			k_msleep(500);
 			break;
 		case SYS_LED_PATTERN_ERROR_C:
 			led_pattern_state = (led_pattern_state + 1) % 10;
-			gpio_pin_set_dt(&led, led_pattern_state < 8 && led_pattern_state % 2);
+//			gpio_pin_set_dt(&led, led_pattern_state < 8 && led_pattern_state % 2);
+			led_pin_set(SYS_LED_COLOR_ERROR, 1, led_pattern_state < 8 && led_pattern_state % 2);
+			k_msleep(500);
+			break;
+		case SYS_LED_PATTERN_ERROR_D:
+			led_pattern_state = (led_pattern_state + 1) % 2;
+//			gpio_pin_set_dt(&led, led_pattern_state);
+			led_pin_set(SYS_LED_COLOR_ERROR, 1, led_pattern_state);
 			k_msleep(500);
 			break;
 

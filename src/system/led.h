@@ -18,6 +18,23 @@ LED priorities (0 is highest)
 #define SYS_LED_PRIORITY_SYSTEM 4
 #define SYS_LED_PATTERN_DEPTH 5
 
+// RGB
+//0.3,0.3,0.3: Default
+//0.2,0.8,0: Success
+//0.8,0.2,0: Error
+//0.5,0.5,0: Charging?
+
+// Tri-color
+//0,0,1: Default (W)
+//0,1,0: Success (YG)
+//1,0,0: Error (R/A)
+//0.5,0.5,0: Charging?
+
+// Dual color
+//0,1: Default/Success (YG/W)
+//1,0: Error (R/A)
+//0.5,0.5: Charging?
+
 // TODO: these patterns are kinda funky
 enum sys_led_pattern {
 	SYS_LED_PATTERN_OFF_FORCE, // ignores lower priority patterns
@@ -42,6 +59,13 @@ enum sys_led_pattern {
 	SYS_LED_PATTERN_ERROR_B, // 500ms on 500ms off, 3 times, every 5000ms			// Error
 	SYS_LED_PATTERN_ERROR_C, // 500ms on 500ms off, 4 times, every 5000ms			// Error
 	SYS_LED_PATTERN_ERROR_D, // 500ms on 500ms off (same as SYS_LED_PATTERN_LONG)	// Error
+};
+
+enum sys_led_color {
+	SYS_LED_COLOR_DEFAULT,
+	SYS_LED_COLOR_SUCCESS,
+	SYS_LED_COLOR_ERROR,
+	SYS_LED_COLOR_CHARGING,
 };
 
 void set_led(enum sys_led_pattern led_pattern, int priority);
