@@ -1,3 +1,18 @@
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PIN_DISCONNECTED>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PIN_DISCONNECTED>;
+			low-power-enable;
+		};
+	};
+};
+
 / {
 	pwmleds {
 		compatible = "pwm-leds";
