@@ -121,6 +121,24 @@ static void print_info(void)
 	printk("Receiver Address: %012llX\n", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
 }
 
+static void print_uptime(void)
+{
+	int64_t uptime = k_ticks_to_us_floor64(k_uptime_ticks());
+
+	uint32_t days = uptime / 86400000000;
+	uptime %= 86400000000;
+	uint8_t hours = uptime / 3600000000;
+	uptime %= 3600000000;
+	uint8_t minutes = uptime / 60000000;
+	uptime %= 60000000;
+	uint8_t seconds = uptime / 1000000;
+	uptime %= 1000000;
+	uint16_t milliseconds = uptime / 1000;
+	uint16_t microseconds = uptime %= 1000;
+
+	printk("Uptime: %u.%02u:%02u:%02u.%03u,%03u\n", days, hours, minutes, seconds, milliseconds, microseconds);
+}
+
 static void console_thread(void)
 {
 	console_getline_init();
@@ -130,10 +148,12 @@ static void console_thread(void)
 	printk("*** " CONFIG_USB_DEVICE_MANUFACTURER " " CONFIG_USB_DEVICE_PRODUCT " ***\n");
 	printk(FW_STRING);
 	printk("info                         Get device information\n");
+	printk("uptime                       Get device uptime\n");
 	printk("reboot                       Soft reset the device\n");
 	printk("calibrate                    Calibrate sensor ZRO\n");
 
 	uint8_t command_info[] = "info";
+	uint8_t command_uptime[] = "uptime";
 	uint8_t command_reboot[] = "reboot";
 	uint8_t command_calibrate[] = "calibrate";
 
@@ -166,6 +186,10 @@ static void console_thread(void)
 		if (memcmp(line, command_info, sizeof(command_info)) == 0)
 		{
 			print_info();
+		}
+		else if (memcmp(line, command_uptime, sizeof(command_uptime)) == 0)
+		{
+			print_uptime();
 		}
 		else if (memcmp(line, command_reboot, sizeof(command_reboot)) == 0)
 		{
