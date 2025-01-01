@@ -238,6 +238,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	int err = 0;
 	uint16_t total = 0;
 	uint16_t packets = UINT16_MAX;
+	uint16_t empty_packets = 0;
 	while (packets > 0 && len >= 8)
 	{
 		memset(data, 0x7F, 8); // Empty packet is 7F filled
@@ -262,7 +263,6 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 //		}
 		// specially handle packet error from unknown fifo corruption
 		// TODO: this will discard some data in fifo, however the data is actually recoverable.
-		uint16_t empty_packets = 0;
 		for (int i = 0; i < packets; i++)
 		{
 			err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_DATA, &data[i * 8], 8); // must check each packet as its coming in
@@ -274,7 +274,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 			}
 			else if (data[i * 8] != 0x20 && fifo_primed) // immediately reset fifo on invalid packet
 			{
-				if (memcmp(&data[i * 8], empty, 8)) // skip if read empty packet
+				if (!memcmp(&data[i * 8], empty, 8)) // skip if read empty packet
 				{
 					empty_packets++;
 					continue;
@@ -290,14 +290,14 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 //				k_busy_wait(250);
 			}
 		}
-		if (empty_packets)
-			LOG_WRN("FIFO read %d empty packet%s", empty_packets, empty_packets > 1 ? "s" : "");
 		if (err)
 			LOG_ERR("I2C error");
 		data += packets * 8;
 		len -= packets * 8;
 		total += packets;
 	}
+	if (empty_packets)
+		LOG_WRN("FIFO read %d/%d empty packet%s", empty_packets, total, empty_packets > 1 ? "s" : "");
 	return total;
 }
 
