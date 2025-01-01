@@ -10,7 +10,6 @@
 		startup-delay-us = <0>;
 	};
 
-	// Uncomment below to Enable SW0
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -20,7 +19,7 @@
 	};
 
 	aliases {
-		sw0 = &button0;
+		// sw0 = &button0; // Uncomment to Enable SW0
 	};
 
 	battery-divider {

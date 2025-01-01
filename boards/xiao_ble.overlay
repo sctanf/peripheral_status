@@ -1,3 +1,18 @@
+&pinctrl {
+	pwm1_default: pwm1_default {
+		group1 {
+			psels = <NRF_PIN_DISCONNECTED>;
+		};
+	};
+
+	pwm1_sleep: pwm1_sleep {
+		group1 {
+			psels = <NRF_PIN_DISCONNECTED>;
+			low-power-enable;
+		};
+	};
+};
+
 / {
 	pwmleds {
 		compatible = "pwm-leds";
@@ -6,7 +21,6 @@
 		};
 	};
 
-	// Uncomment below to Enable SW0
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
@@ -16,7 +30,7 @@
 	};
 
 	aliases {
-		sw0 = &button0;
+		// sw0 = &button0; // Uncomment to Enable SW0
 	};
 
 	pwmclock: pwmclock {
