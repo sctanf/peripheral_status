@@ -1,33 +1,3 @@
-&pinctrl {
-	i2c0_default: i2c0_default {
-		group1 {
-			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>, <NRF_PSEL(TWIM_SCL, 0, 5)>;
-			bias-disable;
-		};
-	};
-
-	i2c0_sleep: i2c0_sleep {
-		group1 {
-			psels = <NRF_PSEL(TWIM_SDA, 0, 4)>, <NRF_PSEL(TWIM_SCL, 0, 5)>;
-			bias-disable;
-			low-power-enable;
-		};
-	};
-
-	pwm1_default: pwm1_default {
-		group1 {
-			psels = <NRF_PIN_DISCONNECTED>;
-		};
-	};
-
-	pwm1_sleep: pwm1_sleep {
-		group1 {
-			psels = <NRF_PIN_DISCONNECTED>;
-			low-power-enable;
-		};
-	};
-};
-
 / {
 	pwmleds {
 		compatible = "pwm-leds";
@@ -62,9 +32,8 @@
 	};
 
 	zephyr,user {
-		int0-gpios = <&gpio0 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		int0-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		led-gpios = <&gpio0 17 (GPIO_OPEN_DRAIN|GPIO_ACTIVE_LOW)>;
-		// clk-gpios = <&gpio0 28 GPIO_OPEN_DRAIN>; // Uncomment and set to correct pin if using an external clock (crystal oscillator)
 	};
 
 };
@@ -74,8 +43,6 @@
 	zephyr,concat-buf-size = <255>; // probable max for nrf52832
 	zephyr,flash-buf-max-size = <255>; // probable max for nrf52832
 	clock-frequency = <I2C_BITRATE_FAST>;
-	pinctrl-0 = <&i2c0_default>;
-	pinctrl-1 = <&i2c0_sleep>;
 
 	imu: imu@0 { // any address out of range (00, 7f, etc. will search all addresses and stored address first if available, specify an address here to search first otherwise
 		compatible = "i2c-device";
