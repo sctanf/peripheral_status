@@ -123,7 +123,7 @@ static void print_info(void)
 
 static void print_uptime(void)
 {
-	int64_t uptime = k_ticks_to_us_floor64(k_uptime_ticks());
+	uint64_t uptime = k_ticks_to_us_floor64(k_uptime_ticks());
 
 	uint32_t days = uptime / 86400000000;
 	uptime %= 86400000000;
@@ -134,7 +134,7 @@ static void print_uptime(void)
 	uint8_t seconds = uptime / 1000000;
 	uptime %= 1000000;
 	uint16_t milliseconds = uptime / 1000;
-	uint16_t microseconds = uptime %= 1000;
+	uint16_t microseconds = uptime % 1000;
 
 	printk("Uptime: %u.%02u:%02u:%02u.%03u,%03u\n", days, hours, minutes, seconds, milliseconds, microseconds);
 }
