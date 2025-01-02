@@ -61,6 +61,20 @@ static const char *meow_punctuations[] = {
 	""
 };
 
+static const char *meow_suffixes[] = {
+	" :3",
+	" :3c",
+	" ;3",
+	" ;3c",
+	" x3",
+	" x3c",
+	" >:3",
+	" >:3c",
+	" >;3",
+	" >;3c",
+	""
+};
+
 static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
 {
 	const struct log_backend *backend = log_backend_get_by_name("log_backend_uart");
@@ -137,6 +151,19 @@ static void print_uptime(void)
 	uint16_t microseconds = uptime % 1000;
 
 	printk("Uptime: %u.%02u:%02u:%02u.%03u,%03u\n", days, hours, minutes, seconds, milliseconds, microseconds);
+}
+
+static void print_meow(void)
+{
+	int64_t ticks = k_uptime_ticks();
+
+	ticks %= ARRAY_SIZE(meows) * ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes); // silly number generator
+	uint8_t meow = ticks / (ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes));
+	ticks %= (ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes));
+	uint8_t punctuation = ticks / ARRAY_SIZE(meow_suffixes);
+	uint8_t suffix = ticks % ARRAY_SIZE(meow_suffixes);
+
+	printk("%s%s%s\n", meows[meow], meow_punctuations[punctuation], meow_suffixes[suffix]);
 }
 
 static void console_thread(void)
@@ -231,9 +258,7 @@ static void console_thread(void)
 #endif
 		else if (memcmp(line, command_meow, sizeof(command_meow)) == 0) 
 		{
-			uint32_t cycles = k_cycle_get_32();
-			cycles %= ARRAY_SIZE(meows) * ARRAY_SIZE(meow_punctuations); // silly number generator
-			printk("%s%s\n", meows[cycles % ARRAY_SIZE(meows)], meow_punctuations[cycles / ARRAY_SIZE(meows)]);
+			print_meow();
 		}
 		else
 		{
