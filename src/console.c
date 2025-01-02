@@ -156,6 +156,8 @@ static void print_uptime(void)
 static void print_meow(void)
 {
 	int64_t ticks = k_uptime_ticks();
+	uint32_t cycles = k_cycle_get_32();
+	printk("ticks: %lld, cycles: %u\n", ticks, cycles);
 
 	ticks %= ARRAY_SIZE(meows) * ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes); // silly number generator
 	uint8_t meow = ticks / (ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes));
