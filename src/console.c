@@ -68,6 +68,8 @@ static const char *meow_suffixes[] = {
 	" ;3c",
 	" x3",
 	" x3c",
+	" X3",
+	" X3c",
 	" >:3",
 	" >:3c",
 	" >;3",
