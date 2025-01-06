@@ -153,6 +153,7 @@ static void print_uptime(void)
 	uint16_t microseconds = uptime % 1000;
 
 	printk("Uptime: %u.%02u:%02u:%02u.%03u,%03u\n", days, hours, minutes, seconds, milliseconds, microseconds);
+	// TODO: accumulated uptime from retain
 }
 
 static void print_meow(void)
