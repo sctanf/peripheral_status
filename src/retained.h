@@ -23,12 +23,6 @@ struct retained_data {
 	 */
 	uint64_t uptime_sum;
 
-	/* Number of times the application has started. */
-	uint32_t boots;
-
-	/* Number of times the application has gone into system off. */
-	uint32_t off_count;
-
 	uint8_t reboot_counter;
 	uint8_t paired_addr[8];
 
