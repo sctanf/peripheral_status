@@ -268,7 +268,7 @@ void esb_pair(void)
 		k_msleep(1600); // wait for led pattern
 	}
 	LOG_INF("Tracker ID: %u", paired_addr[1]);
-	LOG_INF("Receiver Address: %012llX", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
+	LOG_INF("Receiver address: %012llX", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
 
 	connection_set_id(paired_addr[1]);
 

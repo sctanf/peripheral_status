@@ -134,7 +134,7 @@ static void print_info(void)
 
 	printk("\nTracker ID: %u\n", retained.paired_addr[1]);
 	printk("Device address: %012llX\n", *(uint64_t *)NRF_FICR->DEVICEADDR & 0xFFFFFFFFFFFF);
-	printk("Receiver Address: %012llX\n", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
+	printk("Receiver address: %012llX\n", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
 }
 
 static void print_uptime(void)
