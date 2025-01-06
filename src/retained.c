@@ -179,11 +179,19 @@ bool retained_validate(void)
 	 */
 	(void)ram_range_retain(&retained, RETAINED_CHECKED_SIZE, true);
 
+	/* Reset to accrue runtime from this session. */
+	retained.uptime_latest = 0;
+
 	return valid;
 }
 
 void retained_update(void)
 {
+	uint64_t now = k_uptime_ticks();
+
+	retained.uptime_sum += (now - retained.uptime_latest);
+	retained.uptime_latest = now;
+
 	uint32_t crc = crc32_ieee((const uint8_t *)&retained,
 				  RETAINED_CRC_OFFSET);
 
