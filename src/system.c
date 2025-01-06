@@ -108,7 +108,7 @@ void configure_sense_pins(void)
 
 static bool nvs_init = false;
 
-static inline void sys_nvs_init(void) // TODO: repeat init until it works?
+static inline void sys_nvs_init(void)
 {
 	if (nvs_init)
 		return;

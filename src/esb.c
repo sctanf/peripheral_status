@@ -257,7 +257,7 @@ void esb_pair(void)
 			}
 			esb_flush_rx();
 			esb_flush_tx();
-			esb_write_payload(&tx_payload_pair); // TODO: Does this still fail after a while?
+			esb_write_payload(&tx_payload_pair);
 			esb_start_tx();
 			k_msleep(1000);
 		}

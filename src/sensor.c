@@ -329,7 +329,6 @@ void sensor_retained_read(void) // TODO: move some of this to sys?
 }
 
 // TODO: Always store quat(maybe) and just check if the fusion needs converge fast! (initialize)
-// TODO: check if it is a vqf or fusion state
 void sensor_retained_write(void) // TODO: move to sys?
 {
 	if (!sensor_fusion_init)
@@ -455,7 +454,7 @@ void sensor_calibrate_mag(void)
 	//mag_progress |= 1 << 7;
 	mag_progress = 0;
 	// clear data
-	memset(ata, 0, sizeof(ata)); // TODO: does this work??
+	memset(ata, 0, sizeof(ata));
 	norm_sum = 0.0;
 	sample_count = 0.0;
 	sys_write(MAIN_MAG_BIAS_ID, &retained.magBAinv, magBAinv, sizeof(magBAinv));
@@ -481,7 +480,7 @@ void sensor_calibrate_mag(void)
 int sensor_calibration_validate(void)
 {
 	float zero[3] = {0};
-	if (!v_epsilon(accelBias, zero, 0.5) || !v_epsilon(gyroBias, zero, 50.0)) // TODO: this is using v_epsilon to compare zero. Check accel is <0.5G and gyro <50dps
+	if (!v_epsilon(accelBias, zero, 0.5) || !v_epsilon(gyroBias, zero, 50.0)) // check accel is <0.5G and gyro <50dps
 	{
 		sensor_calibration_clear();
 		LOG_WRN("Invalidated calibration");
@@ -499,7 +498,7 @@ int sensor_calibration_validate_6_side(void)
 		diagonal[i] = accBAinv[i + 1][i];
 	float magnitude = v_avg(diagonal);
 	float average[3] = {magnitude, magnitude, magnitude};
-	if (!v_epsilon(accBAinv[0], zero, 0.5) || !v_epsilon(diagonal, average, magnitude * 0.1f)) // TODO: this is using v_epsilon to compare. Check accel is <0.5G and diagonals are within 10%
+	if (!v_epsilon(accBAinv[0], zero, 0.5) || !v_epsilon(diagonal, average, magnitude * 0.1f)) // check accel is <0.5G and diagonals are within 10%
 	{
 		sensor_calibration_clear_6_side();
 		LOG_WRN("Invalidated calibration");
@@ -517,7 +516,7 @@ int sensor_calibration_validate_mag(void)
 		diagonal[i] = magBAinv[i + 1][i];
 	float magnitude = v_avg(diagonal);
 	float average[3] = {magnitude, magnitude, magnitude};
-	if (!v_epsilon(magBAinv[0], zero, 1) || !v_epsilon(diagonal, average, MAX(magnitude * 0.2f, 0.1f))) // TODO: this is using v_epsilon to compare. Check offset is <1 unit and diagonals are within 20%
+	if (!v_epsilon(magBAinv[0], zero, 1) || !v_epsilon(diagonal, average, MAX(magnitude * 0.2f, 0.1f))) // check offset is <1 unit and diagonals are within 20%
 	{
 		sensor_calibration_clear_mag();
 		LOG_WRN("Invalidated calibration");
@@ -711,7 +710,7 @@ void main_imu_thread(void)
 {
 	main_running = true;
 	int err = main_imu_init(); // Initialize IMUs and Fusion
-	// TODO: handle imu init error, maybe restart device or flash led
+	// TODO: handle imu init error, maybe restart device?
 	if (err)
 		set_status(SYS_STATUS_SENSOR_ERROR, true); // TODO: only handles general init error
 	else
@@ -862,7 +861,7 @@ void main_imu_thread(void)
 				{
 					LOG_ERR("Packet error threshold exceeded");
 					set_status(SYS_STATUS_SENSOR_ERROR, true); // kind of redundant
-					sys_request_system_reboot(); // TODO: obviously the root issue with icm456 should be resolved, but this should keep the device working
+					sys_request_system_reboot();
 				}
 			}
 			else if (processed_packets < packets)
@@ -892,7 +891,7 @@ void main_imu_thread(void)
 					last_data_time = INT64_MAX; // only try to suspend once
 					LOG_INF("No motion from sensors in %llds", imu_timeout/1000);
 #if CONFIG_USE_IMU_WAKE_UP
-					sys_request_WOM(); // TODO: this will suspend the thread, will the system still shut down properly? Otherwise this thread should queue shutdown and suspend itself
+					sys_request_WOM(); // TODO: should queue shutdown and suspend itself instead
 //					main_imu_suspend(); // TODO: auto suspend, the device should configure WOM ASAP but it does not
 #endif
 				}
