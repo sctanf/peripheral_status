@@ -286,19 +286,25 @@ bool dock_read(void)
 bool chg_read(void)
 {
 #if CHG_EXISTS
-	return gpio_pin_get_dt(&chg);
-#else
-	return false;
+	static int64_t last_trigger_time;
+	if (gpio_pin_get_dt(&chg))
+		last_trigger_time = k_uptime_get() + 100;
+	if (k_uptime_get() - last_trigger_time < 0)
+		return true;
 #endif
+	return false;
 }
 
 bool stby_read(void)
 {
 #if STBY_EXISTS
-	return gpio_pin_get_dt(&stby);
-#else
-	return false;
+	static int64_t last_trigger_time;
+	if (gpio_pin_get_dt(&stby))
+		last_trigger_time = k_uptime_get() + 100;
+	if (k_uptime_get() - last_trigger_time < 0)
+		return true;
 #endif
+	return false;
 }
 
 #if USER_SHUTDOWN_ENABLED

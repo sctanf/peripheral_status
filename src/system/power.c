@@ -190,6 +190,13 @@ static void power_thread(void)
 		bool battery_available = battery_mV > 1500 && !abnormal_reading; // Keep working without the battery connected, otherwise it is obviously too dead to boot system
 		plugged = battery_mV > 4300 && !abnormal_reading; // Separate detection of vin
 
+		// debounce plugged state
+		static int64_t last_plugged_time;
+		if (plugged)
+			last_plugged_time = k_uptime_get() + 100;
+		if (k_uptime_get() - last_plugged_time < 0)
+			plugged = true;
+
 		if (!power_init)
 		{
 			// log battery state once
