@@ -223,36 +223,33 @@ static void console_thread(void)
 		}
 		else if (memcmp(line, command_reboot, sizeof(command_reboot)) == 0)
 		{
-			sys_reboot(SYS_REBOOT_COLD);
+			sys_request_system_reboot();
 		}
 		else if (memcmp(line, command_calibrate, sizeof(command_calibrate)) == 0)
 		{
 //			reboot_counter_write(101);
 			sensor_request_calibration();
-			k_msleep(1);
-			sys_reboot(SYS_REBOOT_WARM);
+			sys_request_system_reboot();
 		}
 #if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
 		else if (memcmp(line, command_6_side, sizeof(command_6_side)) == 0)
 		{
 			sensor_request_calibration_6_side();
-			k_msleep(1);
-			sys_reboot(SYS_REBOOT_WARM);
+			sys_request_system_reboot();
 		}
 #endif
 		else if (memcmp(line, command_pair, sizeof(command_pair)) == 0) 
 		{
 //			reboot_counter_write(102);
 			esb_reset_pair();
-			k_msleep(1);
-			sys_reboot(SYS_REBOOT_WARM);
+			sys_request_system_reboot();
 		}
 #if DFU_EXISTS
 		else if (memcmp(line, command_dfu, sizeof(command_dfu)) == 0)
 		{
 #if ADAFRUIT_BOOTLOADER
 			NRF_POWER->GPREGRET = 0x57;
-			sys_reboot(SYS_REBOOT_COLD);
+			sys_request_system_reboot();
 #endif
 #if NRF5_BOOTLOADER
 			gpio_pin_configure(gpio_dev, 19, GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW);

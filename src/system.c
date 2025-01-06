@@ -209,7 +209,7 @@ static void button_pressed(const struct device *dev, struct gpio_callback *cb, u
 	else
 	{
 		if (press_time != 0 && k_uptime_get() - press_time > 50) // Debounce
-			sys_reboot(SYS_REBOOT_COLD); // treat like pin reset but without pin reset reason
+			sys_request_system_reboot(); // treat like pin reset but without pin reset reason
 		press_time = 0;
 	}
 }
@@ -244,7 +244,7 @@ static void button_thread(void)
 	{
 		k_msleep(10);
 		if (press_time != 0 && k_uptime_get() - press_time > 50 && button_read()) // Button is being pressed
-			sys_reboot(SYS_REBOOT_COLD);
+			sys_request_system_reboot();
 	}
 }
 #endif
@@ -326,7 +326,7 @@ void sys_reset_mode(uint8_t mode)
 	case 1:
 		LOG_INF("IMU calibration requested");
 		sensor_request_calibration();
-		sys_reboot(SYS_REBOOT_COLD); // TODO: this should not be needed
+		sys_request_system_reboot(); // TODO: this should not be needed
 		break;
 	case 2: // Reset mode pairing reset
 		LOG_INF("Pairing reset requested");
@@ -338,7 +338,7 @@ void sys_reset_mode(uint8_t mode)
 		LOG_INF("DFU requested");
 #if ADAFRUIT_BOOTLOADER
 		NRF_POWER->GPREGRET = 0x57; // DFU_MAGIC_UF2_RESET
-		sys_reboot(SYS_REBOOT_COLD);
+		sys_request_system_reboot();
 #endif
 #if NRF5_BOOTLOADER
 		gpio_pin_configure(gpio_dev, 19, GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW);
