@@ -137,13 +137,11 @@ static void print_info(void)
 	printk("Receiver address: %012llX\n", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
 }
 
-static void print_uptime(void)
+static void print_uptime(const uint64_t ticks, const char *name)
 {
-	uint64_t uptime = k_ticks_to_us_floor64(k_uptime_ticks());
+	uint64_t uptime = k_ticks_to_us_floor64(ticks);
 
-	uint32_t days = uptime / 86400000000;
-	uptime %= 86400000000;
-	uint8_t hours = uptime / 3600000000;
+	uint32_t hours = uptime / 3600000000;
 	uptime %= 3600000000;
 	uint8_t minutes = uptime / 60000000;
 	uptime %= 60000000;
@@ -152,8 +150,7 @@ static void print_uptime(void)
 	uint16_t milliseconds = uptime / 1000;
 	uint16_t microseconds = uptime % 1000;
 
-	printk("Uptime: %u.%02u:%02u:%02u.%03u,%03u\n", days, hours, minutes, seconds, milliseconds, microseconds);
-	// TODO: accumulated uptime from retain
+	printk("%s: %02u:%02u:%02u.%03u,%03u\n", name, hours, minutes, seconds, milliseconds, microseconds);
 }
 
 static void print_meow(void)
@@ -219,7 +216,9 @@ static void console_thread(void)
 		}
 		else if (memcmp(line, command_uptime, sizeof(command_uptime)) == 0)
 		{
-			print_uptime();
+			uint64_t uptime = k_uptime_ticks();
+			print_uptime(uptime, "Uptime");
+			print_uptime(uptime - retained.uptime_latest + retained.uptime_sum, "Accumulated");
 		}
 		else if (memcmp(line, command_reboot, sizeof(command_reboot)) == 0)
 		{

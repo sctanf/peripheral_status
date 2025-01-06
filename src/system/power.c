@@ -134,6 +134,7 @@ void sys_request_WOM() // TODO: if IMU interrupt does not exist what does the sy
 	sensor_setup_WOM(); // enable WOM feature
 	LOG_INF("Configured IMU wake up");
 	LOG_INF("Powering off nRF");
+	retained_update();
 	sys_poweroff();
 #else
 	LOG_WRN("IMU interrupt GPIO does not exist");
@@ -153,6 +154,7 @@ void sys_request_system_off(void) // TODO: add timeout
 	set_regulator(SYS_REGULATOR_LDO); // Switch to LDO
 	// Set system off
 	LOG_INF("Powering off nRF");
+	retained_update();
 	sys_poweroff();
 }
 
@@ -162,6 +164,7 @@ void sys_request_system_reboot(void) // TODO: add timeout
 	configure_system_off(); // Common subsystem shutdown and prepare sense pins
 	// Set system reboot
 	LOG_INF("Rebooting nRF");
+	retained_update();
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
