@@ -25,9 +25,14 @@ int main(void)
 #if IGNORE_RESET && BUTTON_EXISTS
 	bool reset_pin_reset = false;
 #else
+#ifdef NRF_RESET
+	bool reset_pin_reset = NRF_RESET->RESETREAS & 0x01;
+	NRF_RESET->RESETREAS = NRF_RESET->RESETREAS; // Clear RESETREAS
+#else
 	bool reset_pin_reset = NRF_POWER->RESETREAS & 0x01;
-#endif
 	NRF_POWER->RESETREAS = NRF_POWER->RESETREAS; // Clear RESETREAS
+#endif
+#endif
 
 //	start_time = k_uptime_get(); // Need to get start time for imu startup delay
 	set_led(SYS_LED_PATTERN_ON, SYS_LED_PRIORITY_BOOT); // Boot LED
