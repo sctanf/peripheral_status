@@ -88,10 +88,10 @@ SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #ifdef LED_RGB_COLOR
 static float led_pwm_period[4][3] = {
-	{0.3, 0.3, 0.3}, // Default
-	{0.2, 0.8, 0}, // Success
-	{0.8, 0.2, 0}, // Error
-	{0.5, 0.5, 0}, // Charging
+	{0.33, 0.33, 0.33}, // Default
+	{0.44, 0.56, 0}, // Success
+	{1, 0, 0}, // Error
+	{0.73, 0.27, 0}, // Charging
 };
 #elif defined(LED_TRI_COLOR)
 static float led_pwm_period[4][3] = {
