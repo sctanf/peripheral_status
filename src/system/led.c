@@ -130,7 +130,6 @@ static void led_pin_set(enum sys_led_color color, int brightness_pptt, int value
 		value_pptt = 10000;
 #if PWM_LED_EXISTS
 	value_pptt = value_pptt * brightness_pptt / 10000;
-	LOG_INF("LED: %d %d %d", color, brightness_pptt, value_pptt);
 	// only supporting color if PWM is supported
 	pwm_set_pulse_dt(&pwm_led, pwm_led.period / 10000 * (led_pwm_period[color][0] * value_pptt / 10000));
 #if PWM_LED1_EXISTS
