@@ -25,7 +25,7 @@ void timer_handler(nrf_timer_event_t event_type, void *p_context)
 			esb_initialize(false);
 			esb_start_rx();
 			esb_state = false;
-			nrfx_timer_pause(&m_timer);
+//			nrfx_timer_pause(&m_timer);
 			timer_state = false;
 			LOG_INF("Timer reset elapsed");
 		}
@@ -56,15 +56,15 @@ void timer_init(void)
 	//timer_cfg.bit_width = NRF_TIMER_BIT_WIDTH_16;
 	//timer_cfg.interrupt_priority = NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY;
 	//timer_cfg.p_context = NULL;
-	nrfx_timer_init(&m_timer, &timer_cfg, timer_handler);
-	uint32_t ticks = nrfx_timer_ms_to_ticks(&m_timer, 3);
-	nrfx_timer_extended_compare(&m_timer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
+//	nrfx_timer_init(&m_timer, &timer_cfg, timer_handler);
+//	uint32_t ticks = nrfx_timer_ms_to_ticks(&m_timer, 3);
+//	nrfx_timer_extended_compare(&m_timer, NRF_TIMER_CC_CHANNEL0, ticks, NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK, false);
 	LOG_INF("Timer at %d", ticks * (tracker_id*2 + 3) / 21); // TODO: temp set max 8
-	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL1, ticks * (tracker_id*2 + 3) / 21, true); // timeslot to send data  TODO: temp set max 8
-	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL2, ticks * 19 / 21, true); // switch to rx
-	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL3, ticks * 2 / 21, true); // switch to tx
-	nrfx_timer_enable(&m_timer);
-	IRQ_DIRECT_CONNECT(TIMER1_IRQn, 0, nrfx_timer_1_irq_handler, 0);
-	irq_enable(TIMER1_IRQn);
+//	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL1, ticks * (tracker_id*2 + 3) / 21, true); // timeslot to send data  TODO: temp set max 8
+//	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL2, ticks * 19 / 21, true); // switch to rx
+//	nrfx_timer_compare(&m_timer, NRF_TIMER_CC_CHANNEL3, ticks * 2 / 21, true); // switch to tx
+//	nrfx_timer_enable(&m_timer);
+//	IRQ_DIRECT_CONNECT(TIMER1_IRQn, 0, nrfx_timer_1_irq_handler, 0);
+//	irq_enable(TIMER1_IRQn);
 	timer_state = true;
 }

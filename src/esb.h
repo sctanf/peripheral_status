@@ -8,7 +8,7 @@
 #define LAST_RESET_LIMIT 10
 extern uint8_t last_reset;
 // TODO: move to esb/timer
-extern const nrfx_timer_t m_timer;
+//extern const nrfx_timer_t m_timer;
 extern bool esb_state;
 extern bool timer_state;
 extern bool send_data;

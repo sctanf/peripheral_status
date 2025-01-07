@@ -8,7 +8,7 @@
 #include "esb.h"
 
 uint8_t last_reset = 0;
-const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(1);
+//const nrfx_timer_t m_timer = NRFX_TIMER_INSTANCE(1);
 bool esb_state = false;
 bool timer_state = false;
 bool send_data = false;
@@ -55,17 +55,17 @@ void event_handler(struct esb_evt const *event)
 				{
 					// TODO: Device should never receive packets if it is already paired, why is this packet received?
 					// This may be part of acknowledge
-					if (!nrfx_timer_init_check(&m_timer))
+//					if (!nrfx_timer_init_check(&m_timer))
 					{
 						LOG_WRN("Timer not initialized");
 						break;
 					}
 					if (timer_state == false)
 					{
-						nrfx_timer_resume(&m_timer);
+//						nrfx_timer_resume(&m_timer);
 						timer_state = true;
 					}
-					nrfx_timer_clear(&m_timer);
+//					nrfx_timer_clear(&m_timer);
 					last_reset = 0;
 					led_clock = (rx_payload.data[0] << 8) + rx_payload.data[1]; // sync led flashes :)
 					led_clock_offset = 0;
