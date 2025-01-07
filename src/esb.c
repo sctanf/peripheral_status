@@ -165,8 +165,7 @@ int esb_initialize(bool tx)
 	}
 
 	// Fast startup mode
-	NRF_RADIO->MODECNF0 |= RADIO_MODECNF0_RU_Fast << RADIO_MODECNF0_RU_Pos;
-	// nrf_radio_modecnf0_set(NRF_RADIO, true, 0);
+	nrf_radio_fast_ramp_up_enable_set(NRF_RADIO, true);
 
 	err = esb_init(&config);
 
