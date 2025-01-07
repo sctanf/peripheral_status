@@ -2,8 +2,7 @@
 	i2c0_default: i2c0_default {
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
-				<NRF_PSEL(TWIM_SCL, 1, 6)>;
-			bias-disable;
+				<NRF_PSEL(TWIM_SCL, 1, 7)>;
 		};
 	};
 
@@ -11,7 +10,6 @@
 		group1 {
 			psels = <NRF_PSEL(TWIM_SDA, 1, 5)>,
 				<NRF_PSEL(TWIM_SCL, 1, 7)>;
-			bias-disable;
 			low-power-enable;
 		};
 	};
