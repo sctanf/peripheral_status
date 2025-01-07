@@ -125,10 +125,10 @@ static int divider_setup(void)
 	};
 
 	if (cfg->output_ohm != 0) {
-		accp->input_positive = SAADC_CH_PSELP_PSELP_AnalogInput0
+		accp->input_positive = 1 // SAADC_CH_PSELP_PSELP_AnalogInput0
 			+ iocp->channel;
 	} else {
-		accp->input_positive = SAADC_CH_PSELP_PSELP_VDD;
+		accp->input_positive = 9; // SAADC_CH_PSELP_PSELP_VDD
 	}
 
 	asp->resolution = 14;

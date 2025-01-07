@@ -71,6 +71,11 @@
 
 };
 
+&uart20 {
+	status = "disabled";
+};
+
+
 &pwm21 {
 	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
