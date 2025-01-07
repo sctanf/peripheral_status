@@ -191,7 +191,8 @@ int esb_initialize(bool tx)
 
 void esb_deinitialize(void)
 {
-	esb_disable();
+	if (esb_initialized)
+		esb_disable();
 	esb_initialized = false;
 }
 
