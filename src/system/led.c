@@ -15,6 +15,8 @@ K_THREAD_DEFINE(led_thread_id, 512, led_thread, NULL, NULL, NULL, 6, 0, 0);
 
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
 #define LED0_NODE DT_NODELABEL(pwm_led0)
+#define LED1_NODE DT_NODELABEL(pwm_led1)
+#define LED2_NODE DT_NODELABEL(pwm_led2)
 
 #if DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, led_gpios)
 #define LED_EXISTS true
@@ -26,11 +28,28 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 #warning "LED GPIO does not exist"
 //static const struct gpio_dt_spec led = {0};
 #endif
+#if DT_NODE_EXISTS(DT_ALIAS(led1))
+#define LED1_EXISTS true
+static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led2))
+#define LED2_EXISTS true
+static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
+#endif
+
 #if DT_NODE_EXISTS(LED0_NODE)
 #define PWM_LED_EXISTS true
 static const struct pwm_dt_spec pwm_led = PWM_DT_SPEC_GET(LED0_NODE);
 #else
 #warning "PWM LED node does not exist"
+#endif
+#if DT_NODE_EXISTS(LED1_NODE)
+#define PWM_LED1_EXISTS true
+static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(LED1_NODE);
+#endif
+#if DT_NODE_EXISTS(LED2_NODE)
+#define PWM_LED2_EXISTS true
+static const struct pwm_dt_spec pwm_led2 = PWM_DT_SPEC_GET(LED2_NODE);
 #endif
 
 #if LED_EXISTS
@@ -42,32 +61,58 @@ static int led_pattern_state;
 static int led_pin_init(void)
 {
 	gpio_pin_configure_dt(&led, GPIO_OUTPUT);
+#if LED1_EXISTS
+	gpio_pin_configure_dt(&led1, GPIO_OUTPUT);
+#endif
+#if LED2_EXISTS
+	gpio_pin_configure_dt(&led2, GPIO_OUTPUT);
+#endif
 	return 0;
 }
 
 SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
-// TODO:
-#if LED_RGB_COLOR
+#ifdef CONFIG_LED_RGB_COLOR
+#define LED_RGB_COLOR
+#endif
+
+#if PWM_LED_EXISTS && PWM_LED1_EXISTS && PWM_LED2_EXISTS
+#define LED_TRI_COLOR
+#else
+#undef LED_RGB_COLOR
+#undef LED_TRI_COLOR
+#if PWM_LED_EXISTS && PWM_LED1_EXISTS
+#define LED_DUAL_COLOR
+#endif
+#endif
+
+#ifdef LED_RGB_COLOR
 static float led_pwm_period[4][3] = {
 	{0.3, 0.3, 0.3}, // Default
 	{0.2, 0.8, 0}, // Success
 	{0.8, 0.2, 0}, // Error
 	{0.5, 0.5, 0}, // Charging
 };
-#elif LED_TRI_COLOR
+#elif defined(LED_TRI_COLOR)
 static float led_pwm_period[4][3] = {
 	{0, 0, 1}, // Default
 	{0, 1, 0}, // Success
 	{1, 0, 0}, // Error
 	{0.5, 0.5, 0}, // Charging
 };
-#elif LED_DUAL_COLOR
+#elif defined(LED_DUAL_COLOR)
 static float led_pwm_period[4][2] = {
 	{0, 1}, // Default
 	{0, 1}, // Success
 	{1, 0}, // Error
 	{0.5, 0.5}, // Charging
+};
+#else
+static float led_pwm_period[4][1] = {
+	{1}, // Default
+	{1}, // Success
+	{1}, // Error
+	{1}, // Charging
 };
 #endif
 
@@ -77,7 +122,13 @@ static void led_pin_set(enum sys_led_color color, float brightness, float value)
 {
 #if PWM_LED_EXISTS
 	// only supporting color if PWM is supported
-	pwm_set_pulse_dt(&pwm_led, pwm_led.period * value * brightness);
+	pwm_set_pulse_dt(&pwm_led, pwm_led.period * led_pwm_period[color][0] * value * brightness);
+#if PWM_LED1_EXISTS
+	pwm_set_pulse_dt(&pwm_led1, pwm_led1.period * led_pwm_period[color][1] * value * brightness);
+#if PWM_LED2_EXISTS
+	pwm_set_pulse_dt(&pwm_led2, pwm_led2.period * led_pwm_period[color][2] * value * brightness);
+#endif
+#endif
 #else
 	gpio_pin_set_dt(&led, value > 0.5f);
 #endif
@@ -89,8 +140,20 @@ static void led_pin_reset()
 #if PWM_LED_EXISTS
 	pwm_set_pulse_dt(&pwm_led, 0);
 #endif
+#if PWM_LED1_EXISTS
+	pwm_set_pulse_dt(&pwm_led1, 0);
+#endif
+#if PWM_LED2_EXISTS
+	pwm_set_pulse_dt(&pwm_led2, 0);
+#endif
 	led_pin_init(); // reinit led
 	gpio_pin_set_dt(&led, 0);
+#if LED1_EXISTS
+	gpio_pin_set_dt(&led1, 0);
+#endif
+#if LED2_EXISTS
+	gpio_pin_set_dt(&led2, 0);
+#endif
 }
 #endif
 

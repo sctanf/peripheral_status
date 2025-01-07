@@ -60,6 +60,22 @@ config BATTERY_NO_MAPPING
 
 endchoice
 
+choice
+	prompt "Status LED color mapping"
+    default LED_TRI_COLOR
+
+config LED_RGB_COLOR
+    bool "Use RGB color mapping"
+    help
+        Use RGB color mapping for LED status if available.
+
+config LED_TRI_COLOR
+    bool "Use default color mapping"
+    help
+        Use the default color mapping for LED status.
+
+endchoice
+
 config IGNORE_RESET
     bool "Ignore reset"
     default y
