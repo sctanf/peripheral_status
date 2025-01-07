@@ -145,15 +145,16 @@ static void led_pin_set(enum sys_led_color color, float brightness, float value)
 // reset all led pins
 static void led_pin_reset()
 {
-#if PWM_LED_EXISTS
-	pwm_set_pulse_dt(&pwm_led, 0);
-#endif
-#if PWM_LED1_EXISTS
-	pwm_set_pulse_dt(&pwm_led1, 0);
-#endif
-#if PWM_LED2_EXISTS
-	pwm_set_pulse_dt(&pwm_led2, 0);
-#endif
+// setting PWM to 0 constantly is expensive..
+//#if PWM_LED_EXISTS
+//	pwm_set_pulse_dt(&pwm_led, 0);
+//#endif
+//#if PWM_LED1_EXISTS
+//	pwm_set_pulse_dt(&pwm_led1, 0);
+//#endif
+//#if PWM_LED2_EXISTS
+//	pwm_set_pulse_dt(&pwm_led2, 0);
+//#endif
 	led_pin_init(); // reinit led
 	gpio_pin_set_dt(&led, 0);
 #if LED1_EXISTS
