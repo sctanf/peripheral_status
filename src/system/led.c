@@ -120,6 +120,14 @@ static float led_pwm_period[4][1] = {
 // TODO: use computed constants for high/low brightness and color values
 static void led_pin_set(enum sys_led_color color, float brightness, float value)
 {
+	if (brightness < 0)
+		brightness = 0;
+	else if (brightness > 1)
+		brightness = 1;
+	if (value < 0)
+		value = 0;
+	else if (value > 1)
+		value = 1;
 #if PWM_LED_EXISTS
 	// only supporting color if PWM is supported
 	pwm_set_pulse_dt(&pwm_led, pwm_led.period * led_pwm_period[color][0] * value * brightness);
