@@ -14,17 +14,21 @@ static void led_thread(void);
 K_THREAD_DEFINE(led_thread_id, 512, led_thread, NULL, NULL, NULL, 6, 0, 0);
 
 #define ZEPHYR_USER_NODE DT_PATH(zephyr_user)
-#define LED0_NODE DT_NODELABEL(pwm_led0)
-#define LED1_NODE DT_NODELABEL(pwm_led1)
-#define LED2_NODE DT_NODELABEL(pwm_led2)
 
 #if DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, led_gpios)
 #define LED_EXISTS true
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, led_gpios);
-#elif DT_NODE_EXISTS(DT_ALIAS(led0))
+#endif
+#if DT_NODE_EXISTS(DT_ALIAS(led0))
+#ifndef LED_EXISTS
 #define LED_EXISTS true
 static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 #else
+#define LED0_EXISTS true
+static const struct gpio_dt_spec led0 = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
+#endif
+#endif
+#ifndef LED_EXISTS
 #warning "LED GPIO does not exist"
 //static const struct gpio_dt_spec led = {0};
 #endif
@@ -36,20 +40,24 @@ static const struct gpio_dt_spec led1 = GPIO_DT_SPEC_GET(DT_ALIAS(led1), gpios);
 #define LED2_EXISTS true
 static const struct gpio_dt_spec led2 = GPIO_DT_SPEC_GET(DT_ALIAS(led2), gpios);
 #endif
+#if DT_NODE_EXISTS(DT_ALIAS(led3))
+#define LED3_EXISTS true
+static const struct gpio_dt_spec led3 = GPIO_DT_SPEC_GET(DT_ALIAS(led3), gpios);
+#endif
 
-#if DT_NODE_EXISTS(LED0_NODE)
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_led0))
 #define PWM_LED_EXISTS true
-static const struct pwm_dt_spec pwm_led = PWM_DT_SPEC_GET(LED0_NODE);
+static const struct pwm_dt_spec pwm_led = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led0));
 #else
 #warning "PWM LED node does not exist"
 #endif
-#if DT_NODE_EXISTS(LED1_NODE)
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_led1))
 #define PWM_LED1_EXISTS true
-static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(LED1_NODE);
+static const struct pwm_dt_spec pwm_led1 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led1));
 #endif
-#if DT_NODE_EXISTS(LED2_NODE)
+#if DT_NODE_EXISTS(DT_ALIAS(pwm_led2))
 #define PWM_LED2_EXISTS true
-static const struct pwm_dt_spec pwm_led2 = PWM_DT_SPEC_GET(LED2_NODE);
+static const struct pwm_dt_spec pwm_led2 = PWM_DT_SPEC_GET(DT_ALIAS(pwm_led2));
 #endif
 
 #if LED_EXISTS
@@ -61,11 +69,17 @@ static int led_pattern_state;
 static int led_pin_init(void)
 {
 	gpio_pin_configure_dt(&led, GPIO_OUTPUT);
+#if LED0_EXISTS
+	gpio_pin_configure_dt(&led0, GPIO_OUTPUT);
+#endif
 #if LED1_EXISTS
 	gpio_pin_configure_dt(&led1, GPIO_OUTPUT);
 #endif
 #if LED2_EXISTS
 	gpio_pin_configure_dt(&led2, GPIO_OUTPUT);
+#endif
+#if LED3_EXISTS
+	gpio_pin_configure_dt(&led3, GPIO_OUTPUT);
 #endif
 	return 0;
 }
@@ -169,11 +183,17 @@ static void led_pin_reset()
 //#endif
 	led_pin_init(); // reinit led
 	gpio_pin_set_dt(&led, 0);
+#if LED0_EXISTS
+	gpio_pin_set_dt(&led0, 0);
+#endif
 #if LED1_EXISTS
 	gpio_pin_set_dt(&led1, 0);
 #endif
 #if LED2_EXISTS
 	gpio_pin_set_dt(&led2, 0);
+#endif
+#if LED3_EXISTS
+	gpio_pin_set_dt(&led3, 0);
 #endif
 }
 #endif
