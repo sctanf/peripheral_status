@@ -106,8 +106,8 @@ SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #ifdef LED_RGB_COLOR
 static int led_pwm_period[4][3] = {
-	{6000, 4000, 0}, // Default
-	{2000, 8000, 0}, // Success
+	{4000, 6000, 0}, // Default
+	{0, 10000, 0}, // Success
 	{10000, 0, 0}, // Error
 	{8000, 2000, 0}, // Charging
 };
@@ -120,8 +120,8 @@ static int led_pwm_period[4][3] = {
 };
 #elif defined(LED_RG_COLOR)
 static int led_pwm_period[4][2] = {
-	{6000, 4000}, // Default
-	{2000, 8000}, // Success
+	{4000, 6000}, // Default
+	{0, 10000}, // Success
 	{10000, 0}, // Error
 	{8000, 2000}, // Charging
 };
