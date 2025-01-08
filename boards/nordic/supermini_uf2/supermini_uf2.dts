@@ -78,6 +78,7 @@
 
 	aliases {
 		// sw0 = &button0; // Uncomment to Enable SW0
+		pwm-led0 = &pwm_led0;
 	};
 
 	pwmclock: pwmclock {

@@ -65,6 +65,7 @@
 
 	aliases {
 		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	battery-divider {

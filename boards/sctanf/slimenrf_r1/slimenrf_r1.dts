@@ -56,6 +56,10 @@
 		};
 	};
 
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
 	battery-divider {
 		compatible = "voltage-divider";
 		status = "okay";
