@@ -74,6 +74,7 @@ SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 
 #ifdef CONFIG_LED_RGB_COLOR
 #define LED_RGB_COLOR
+#define LED_RG_COLOR
 #endif
 
 #if PWM_LED_EXISTS && PWM_LED1_EXISTS && PWM_LED2_EXISTS
@@ -83,6 +84,9 @@ SYS_INIT(led_pin_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 #undef LED_TRI_COLOR
 #if PWM_LED_EXISTS && PWM_LED1_EXISTS
 #define LED_DUAL_COLOR
+#else
+#undef LED_RG_COLOR
+#undef LED_DUAL_COLOR
 #endif
 #endif
 
@@ -99,6 +103,13 @@ static int led_pwm_period[4][3] = {
 	{0, 10000, 0}, // Success
 	{10000, 0, 0}, // Error
 	{6000, 4000, 0}, // Charging
+};
+#elif defined(LED_RG_COLOR)
+static int led_pwm_period[4][2] = {
+	{6000, 4000}, // Default
+	{2000, 8000}, // Success
+	{10000, 0}, // Error
+	{8000, 2000}, // Charging
 };
 #elif defined(LED_DUAL_COLOR)
 static int led_pwm_period[4][2] = {
