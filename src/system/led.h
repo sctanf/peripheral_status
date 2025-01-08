@@ -19,21 +19,16 @@ LED priorities (0 is highest)
 #define SYS_LED_PATTERN_DEPTH 5
 
 // RGB
-//0.3,0.3,0.3: Default
-//0.2,0.8,0: Success
-//0.8,0.2,0: Error
-//0.5,0.5,0: Charging?
+// Red, Green, Blue
 
 // Tri-color
-//0,0,1: Default (W)
-//0,1,0: Success (YG)
-//1,0,0: Error (R/A)
-//0.5,0.5,0: Charging?
+// Red/Amber, Green, YellowGreen/White
+
+// RG
+// Red, Green
 
 // Dual color
-//0,1: Default/Success (YG/W)
-//1,0: Error (R/A)
-//0.5,0.5: Charging?
+// Red/Amber, YellowGreen/White
 
 // TODO: these patterns are kinda funky
 enum sys_led_pattern {
@@ -51,8 +46,8 @@ enum sys_led_pattern {
 	SYS_LED_PATTERN_ONESHOT_COMPLETE, // 200ms on 200ms off, 4 times				// Success
 
 	SYS_LED_PATTERN_ON_PERSIST, // 20% duty cycle									// Success | indicates charged
-	SYS_LED_PATTERN_LONG_PERSIST, // 20% duty cycle, 500ms on 500ms off				// Error   | indicates low battery
-	SYS_LED_PATTERN_PULSE_PERSIST, // 5000ms pulsing								// Default | indicates charging
+	SYS_LED_PATTERN_LONG_PERSIST, // 20% duty cycle, 500ms on 500ms off				// Charging| indicates low battery
+	SYS_LED_PATTERN_PULSE_PERSIST, // 5000ms pulsing								// Charging| indicates charging
 	SYS_LED_PATTERN_ACTIVE_PERSIST, // 300ms on 9700ms off							// Default | indicates normal operation
 
 	SYS_LED_PATTERN_ERROR_A, // 500ms on 500ms off, 2 times, every 5000ms			// Error
