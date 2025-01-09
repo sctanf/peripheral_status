@@ -3,6 +3,7 @@
 
 identifier: slimevrmini_p2_uf2
 name: slimevrmini_p2_uf2
+vendor: slimevr
 type: mcu
 arch: arm
 ram: 128

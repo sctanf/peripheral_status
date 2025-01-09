@@ -65,6 +65,7 @@
 
 	aliases {
 		sw0 = &button0;
+		pwm-led0 = &pwm_led0;
 	};
 
 	battery-divider {
@@ -117,6 +118,10 @@
 		};
 		// size limt is 0x80_000 (512KB)
 	};
+};
+
+&reg1 {
+	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
 };
 
 &adc {
