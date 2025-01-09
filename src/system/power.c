@@ -150,7 +150,7 @@ void sys_request_system_off(void) // TODO: add timeout
 	// Clear sensor addresses
 	sensor_scan_clear();
 	LOG_INF("Requested sensor scan on next boot");
-	sensor_retained_write();
+//	sensor_retained_write();
 	set_regulator(SYS_REGULATOR_LDO); // Switch to LDO
 	// Set system off
 	LOG_INF("Powering off nRF");

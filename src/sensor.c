@@ -311,7 +311,6 @@ void sensor_retained_read(void) // TODO: move some of this to sys?
 		LOG_INF("Fusion data recovered");
 }
 
-// TODO: Always store quat(maybe) and just check if the fusion needs converge fast! (initialize)
 void sensor_retained_write(void) // TODO: move to sys?
 {
 	if (!sensor_fusion_init)
@@ -590,6 +589,7 @@ void main_imu_thread(void)
 				{
 					LOG_ERR("Packet error threshold exceeded");
 					set_status(SYS_STATUS_SENSOR_ERROR, true); // kind of redundant
+					sensor_retained_write(); // keep the fusion state
 					sys_request_system_reboot();
 				}
 			}
