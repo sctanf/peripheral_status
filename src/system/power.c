@@ -162,6 +162,7 @@ void sys_request_system_reboot(void) // TODO: add timeout
 {
 	LOG_INF("System reboot requested");
 	configure_system_off(); // Common subsystem shutdown and prepare sense pins
+//	sensor_retained_write();
 	// Set system reboot
 	LOG_INF("Rebooting nRF");
 	retained_update();
