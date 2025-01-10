@@ -131,8 +131,18 @@ static inline void sys_nvs_init(void)
 	nvs_init = true;
 }
 
+static bool ram_retention_valid = false;
+
 static int sys_retained_init(void)
 {
+#ifdef NRF_RESET
+	bool reset_pin_reset = NRF_RESET->RESETREAS & 0x01;
+#else
+	bool reset_pin_reset = NRF_POWER->RESETREAS & 0x01;
+#endif
+	// on most nrf, reset by pin reset will clear retained
+	if (!reset_pin_reset) // if reset reason is not by pin reset, system automatically trusts retained state
+		ram_retention_valid = true;
 	bool ram_retention = retained_validate(); // Check ram retention
 	// All contents of NVS was stored in RAM to not need initializing NVS often
 	if (!ram_retention)
@@ -151,6 +161,7 @@ static int sys_retained_init(void)
 	else
 	{
 		LOG_INF("Validated RAM");
+		ram_retention_valid = true;
 	}
 	return 0;
 }
@@ -160,6 +171,12 @@ SYS_INIT(sys_retained_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
 // read from retained
 uint8_t reboot_counter_read(void)
 {
+	if (!ram_retention_valid) // system cannot trust retained state, read from nvs
+	{
+		sys_nvs_init();
+		nvs_read(&fs, RBT_CNT_ID, &retained.reboot_counter, sizeof(retained.reboot_counter));
+		retained_update();
+	}
 	return retained.reboot_counter;
 }
 
@@ -167,6 +184,11 @@ uint8_t reboot_counter_read(void)
 void reboot_counter_write(uint8_t reboot_counter)
 {
 	retained.reboot_counter = reboot_counter;
+	if (!ram_retention_valid) // system cannot trust retained state, write to nvs
+	{
+		sys_nvs_init();
+		nvs_write(&fs, RBT_CNT_ID, &retained.reboot_counter, sizeof(retained.reboot_counter));
+	}
 	retained_update();
 }
 
