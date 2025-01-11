@@ -1,7 +1,7 @@
 #ifndef SLIMENRF_SENSORFUSION
 #define SLIMENRF_SENSORFUSION
 
-#include "../sensor.h"
+#include "../../sensor.h"
 
 void sensorfusion_init(float g_time, float a_time, float m_time);
 void sensorfusion_load(const void *data);

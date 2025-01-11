@@ -1,10 +1,10 @@
-#include "../../globals.h"
-#include "../../util.h"
+#include "../../../globals.h"
+#include "../../../util.h"
 
-#include "../../../Fusion/Fusion/Fusion.h"
-#include "FusionOffset2.h"
+#include "../../../../Fusion/Fusion/Fusion.h"
+#include "xioFusionOffset2.h"
 
-#include "fusion.h"
+#include "xiofusion.h"
 
 static FusionOffset offset; // could share goff and q with fusionoffset and fusionahrs but init clears the values
 static FusionAhrs ahrs;

@@ -6,7 +6,7 @@
 
 #include <math.h>
 
-#include "fusions.h"
+#include "fusion/fusions.h"
 #include "sensors.h"
 #include "sensor.h"
 

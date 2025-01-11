@@ -1,9 +1,9 @@
-#include "../../globals.h"
-#include "../../util.h"
+#include "../../../globals.h"
+#include "../../../util.h"
 
-#include "../../../Fusion/Fusion/Fusion.h"
+#include "../../../../Fusion/Fusion/Fusion.h"
 
-#include "sensorfusion.h"
+#include "motionsense.h"
 
 LOG_MODULE_REGISTER(sensorfusion, LOG_LEVEL_INF);
 

@@ -1,9 +1,9 @@
 #ifndef SLIMENRF_SENSOR_FUSIONS
 #define SLIMENRF_SENSOR_FUSIONS
 
-#include "fusion/fusion.h"
-#include "fusion/sensorfusion.h"
-#include "fusion/vqf.h"
+#include "motionsense/motionsense.h"
+#include "xiofusion/xiofusion.h"
+#include "vqf/vqf.h"
 
 enum fusion {
     FUSION_NONE,
