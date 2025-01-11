@@ -30,6 +30,7 @@
 
 #include "fusion/fusions.h"
 #include "sensors.h"
+
 #include "sensor.h"
 
 #if DT_NODE_EXISTS(DT_NODELABEL(imu))
