@@ -1,7 +1,7 @@
 #ifndef SLIMENRF_SENSOR_NONE
 #define SLIMENRF_SENSOR_NONE
 
-#include "../sensor.h"
+#include "sensor.h"
 
 int imu_none_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time);
 void imu_none_shutdown(const struct i2c_dt_spec *dev_i2c);

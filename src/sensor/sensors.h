@@ -22,7 +22,7 @@
 #include "mag/MMC5983MA.h"
 
 #include "scan.h"
-#include "../sensor.h"
+#include "sensor.h"
 #include "sensors_enum.h"
 
 const char *dev_imu_names[] = {

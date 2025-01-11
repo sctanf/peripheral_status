@@ -1,15 +1,13 @@
-#include "globals.h"
-#include "system.h"
-#include "util.h"
-#include "connection.h"
+#include "../globals.h"
+#include "../system/system.h"
+#include "../util.h"
+#include "../connection/connection.h"
 #include "calibration.h"
 
 #include <math.h>
 
-#include "sensor/fusions.h"
-
-#include "sensor/sensors.h"
-
+#include "fusions.h"
+#include "sensors.h"
 #include "sensor.h"
 
 #if DT_NODE_EXISTS(DT_NODELABEL(imu))

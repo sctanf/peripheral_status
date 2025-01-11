@@ -1,8 +1,8 @@
 #include "globals.h"
-#include "system.h"
+#include "system/system.h"
 //#include "timer.h"
-#include "esb.h"
-#include "sensor.h"
+#include "connection/esb.h"
+#include "sensor/sensor.h"
 
 #include <zephyr/sys/reboot.h>
 

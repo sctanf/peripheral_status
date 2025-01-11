@@ -1,7 +1,7 @@
 #ifndef SLIMENRF_SENSOR_EXT
 #define SLIMENRF_SENSOR_EXT
 
-#include "../sensor.h"
+#include "sensor.h"
 
 int mag_ext_setup(const sensor_imu_t *imu, const sensor_mag_t *mag, uint8_t addr);
 

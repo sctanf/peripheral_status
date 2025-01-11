@@ -1,6 +1,6 @@
-#include "globals.h"
-#include "system.h"
-#include "util.h"
+#include "../globals.h"
+#include "../system/system.h"
+#include "../util.h"
 
 #include <math.h>
 

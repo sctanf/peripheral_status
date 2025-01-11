@@ -1,7 +1,7 @@
-#include "globals.h"
-#include "util.h"
+#include "../globals.h"
+#include "../util.h"
 #include "esb.h"
-#include "build_defines.h"
+#include "../build_defines.h"
 
 static uint8_t tracker_id, batt, batt_v, sensor_temp, imu_id, mag_id, tracker_status;
 static uint8_t tracker_svr_status = SVR_STATUS_OK;

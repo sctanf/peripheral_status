@@ -1,9 +1,9 @@
 #ifndef SLIMENRF_SYSTEM
 #define SLIMENRF_SYSTEM
 
-#include "system/led.h"
-#include "system/power.h"
-#include "system/status.h"
+#include "led.h"
+#include "power.h"
+#include "status.h"
 
 #define RBT_CNT_ID 1
 #define PAIRED_ID 2
