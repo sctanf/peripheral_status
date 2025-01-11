@@ -16,27 +16,6 @@ config USE_SLIMENRF_CONSOLE
         Use basic console for commands.
 
 choice
-	prompt "System retention"
-	depends on SOC_COMPATIBLE_NRF52X && CRC || RETAINED_MEM
-    help
-      Select the system retention method.
-      Flash-backed data and fusion state is stored to reduce boot time.
-
-config APP_USE_NRF_RETENTION
-	bool "Use state retention in system off using nRF POWER"
-	depends on SOC_COMPATIBLE_NRF52X && CRC
-	help
-	  On some Nordic chips this application supports retaining
-	  memory while in system off using POWER peripheral.
-	  Select this to enable the feature.
-
-config APP_USE_RETAINED_MEM
-	bool "Use state retention in system off using retained_mem driver"
-	depends on RETAINED_MEM
-
-endchoice
-
-choice
 	prompt "Battery voltage mapping"
     default BATTERY_NO_MAPPING
 
