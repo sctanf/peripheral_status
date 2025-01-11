@@ -39,7 +39,7 @@ int main(void)
 
 #if ADAFRUIT_BOOTLOADER && !(IGNORE_RESET && BUTTON_EXISTS) // Using Adafruit bootloader
 	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
-	ram_range_retain(dbl_reset_mem, sizeof(dbl_reset_mem), true);
+//	ram_range_retain(dbl_reset_mem, sizeof(dbl_reset_mem), true);
 #endif
 
 	uint8_t reboot_counter = reboot_counter_read();
