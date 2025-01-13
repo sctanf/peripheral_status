@@ -1,7 +1,7 @@
 #ifndef IST8308_h
 #define IST8308_h
 
-#include "../sensor.h"
+#include "sensor/sensor.h"
 
 #define IST8308_CNTL4   0x33
 

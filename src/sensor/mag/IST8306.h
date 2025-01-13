@@ -1,7 +1,7 @@
 #ifndef IST8306_h
 #define IST8306_h
 
-#include "../sensor.h"
+#include "sensor/sensor.h"
 
 #define IST8306_STAT 0x10
 

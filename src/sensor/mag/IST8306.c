@@ -4,7 +4,7 @@
 #include <zephyr/drivers/i2c.h>
 
 #include "IST8306.h"
-#include "../sensor_none.h"
+#include "sensor/sensor_none.h"
 
 static const float sensitivity = 0.3; // uT/LSB
 

@@ -20,7 +20,7 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "../globals.h"
+#include "globals.h"
 #include "esb.h"
 #include "connection.h"
 

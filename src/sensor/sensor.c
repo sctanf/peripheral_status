@@ -20,10 +20,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "../globals.h"
-#include "../system/system.h"
-#include "../util.h"
-#include "../connection/connection.h"
+#include "globals.h"
+#include "system/system.h"
+#include "util.h"
+#include "connection/connection.h"
 #include "calibration.h"
 
 #include <math.h>

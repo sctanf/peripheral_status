@@ -1,7 +1,7 @@
 #ifndef ICM45686_h
 #define ICM45686_h
 
-#include "../sensor.h"
+#include "sensor/sensor.h"
 
 // https://invensense.tdk.com/wp-content/uploads/documentation/DS-000577_ICM-45686.pdf
 // https://invensense.tdk.com/wp-content/uploads/2024/07/AN-000478_ICM-45605-ICM-45686-User-Guide.pdf

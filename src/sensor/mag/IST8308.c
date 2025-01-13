@@ -5,7 +5,7 @@
 
 #include "IST8308.h"
 #include "IST8306.h" // Common functions
-#include "../sensor_none.h"
+#include "sensor/sensor_none.h"
 
 static const float sensitivity = 0.075; // uT/LSB
 

@@ -20,8 +20,8 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "../globals.h"
-#include "../system/system.h"
+#include "globals.h"
+#include "system/system.h"
 #include "connection.h"
 
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>

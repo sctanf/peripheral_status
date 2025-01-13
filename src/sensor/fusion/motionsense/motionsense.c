@@ -20,10 +20,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "../../../globals.h"
-#include "../../../util.h"
+#include "globals.h"
+#include "util.h"
 
-#include "../../../../Fusion/Fusion/Fusion.h"
+//#include
 
 #include "motionsense.h"
 

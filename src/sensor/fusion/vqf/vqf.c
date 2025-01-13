@@ -20,12 +20,12 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "../../../globals.h"
-#include "../../../util.h"
+#include "globals.h"
+#include "util.h"
 
-#include "../../../../vqf-c/src/vqf.h"
+#include "../src/vqf.h" // conflicting with vqf.h in local path
 
-#include "vqf.h"
+#include "../vqf/vqf.h" // conflicting with vqf.h in vqf-c
 
 #ifndef DEG_TO_RAD
 #define DEG_TO_RAD (M_PI / 180.0f)

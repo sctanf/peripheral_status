@@ -1,10 +1,10 @@
-#include "../globals.h"
-#include "../sensor/sensor.h"
+#include "globals.h"
+#include "sensor/sensor.h"
 #include "battery.h"
-#include "../connection/connection.h"
+#include "connection/connection.h"
 #include "system.h"
 #include "led.h"
-#include "../connection/esb.h"
+#include "connection/esb.h"
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/poweroff.h>
