@@ -370,7 +370,13 @@ int main_imu_init(void)
 	// TODO: on any errors set main_ok false and skip (make functions return nonzero)
 	err = sensor_init(); // IMUs discovery
 	if (err)
-		return err;
+	{
+		k_msleep(5);
+		LOG_INF("Retrying sensor detection");
+		err = sensor_init(); // on POR, the sensor may not be ready yet
+		if (err)
+			return err;
+	}
 	sensor_imu->shutdown(&sensor_imu_dev); // TODO: is this needed?
 	if (mag_available)
 		sensor_mag->shutdown(&sensor_mag_dev); // TODO: is this needed?
