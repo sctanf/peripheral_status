@@ -1,5 +1,5 @@
 #include "../globals.h"
-#include "../connection.h"
+#include "../connection/connection.h"
 
 #include <zephyr/kernel.h>
 

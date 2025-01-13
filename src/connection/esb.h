@@ -20,24 +20,37 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMENRF_SENSOR_EXT
-#define SLIMENRF_SENSOR_EXT
+#ifndef SLIMENRF_ESB
+#define SLIMENRF_ESB
 
-#include "sensor.h"
+#include <esb.h>
+#include <nrfx_timer.h>
 
-int mag_ext_setup(const sensor_imu_t *imu, const sensor_mag_t *mag, uint8_t addr);
+// TODO: timer?
+#define LAST_RESET_LIMIT 10
+extern uint8_t last_reset;
+// TODO: move to esb/timer
+//extern const nrfx_timer_t m_timer;
+extern bool esb_state;
+extern bool timer_state;
+extern bool send_data;
+// TODO: esb/sensor?
+extern uint16_t led_clock;
+extern uint32_t led_clock_offset;
 
-int mag_ext_init(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
-void mag_ext_shutdown(const struct i2c_dt_spec *dev_i2c);
+void event_handler(struct esb_evt const *event);
+int clocks_start(void);
+int esb_initialize(bool);
+void esb_deinitialize(void);
 
-int mag_ext_update_odr(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
+void esb_set_addr_discovery(void);
+void esb_set_addr_paired(void);
 
-void mag_ext_mag_oneshot(const struct i2c_dt_spec *dev_i2c);
-void mag_ext_mag_read(const struct i2c_dt_spec *dev_i2c, float m[3]);
-float mag_ext_temp_read(const struct i2c_dt_spec *dev_i2c, float bias[3]);
+void esb_pair(void);
+void esb_reset_pair(void);
 
-void mag_ext_mag_process(uint8_t *raw_m, float m[3]);
+void esb_write(uint8_t *data); // TODO: give packets some names
 
-extern const sensor_mag_t sensor_mag_ext;
+bool esb_ready(void);
 
 #endif

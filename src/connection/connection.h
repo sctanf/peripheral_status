@@ -20,24 +20,21 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMENRF_SENSOR_EXT
-#define SLIMENRF_SENSOR_EXT
+#ifndef SLIMENRF_CONNECTION
+#define SLIMENRF_CONNECTION
 
-#include "sensor.h"
+uint8_t connection_get_id(void);
+void connection_set_id(uint8_t id);
 
-int mag_ext_setup(const sensor_imu_t *imu, const sensor_mag_t *mag, uint8_t addr);
+void connection_update_sensor_ids(int imu_id, int mag_id);
+void connection_update_sensor_data(float *q, float *a);
+void connection_update_sensor_temp(float temp);
+void connection_update_battery(bool battery_available, bool plugged, uint32_t battery_pptt, int battery_mV);
+void connection_update_status(int status);
 
-int mag_ext_init(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
-void mag_ext_shutdown(const struct i2c_dt_spec *dev_i2c);
-
-int mag_ext_update_odr(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
-
-void mag_ext_mag_oneshot(const struct i2c_dt_spec *dev_i2c);
-void mag_ext_mag_read(const struct i2c_dt_spec *dev_i2c, float m[3]);
-float mag_ext_temp_read(const struct i2c_dt_spec *dev_i2c, float bias[3]);
-
-void mag_ext_mag_process(uint8_t *raw_m, float m[3]);
-
-extern const sensor_mag_t sensor_mag_ext;
+void connection_write_packet_0();
+void connection_write_packet_1();
+void connection_write_packet_2();
+void connection_write_packet_3();
 
 #endif

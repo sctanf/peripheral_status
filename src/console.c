@@ -1,8 +1,8 @@
 #include "globals.h"
-#include "system.h"
-#include "sensor.h"
-#include "calibration.h"
-#include "esb.h"
+#include "system/system.h"
+#include "sensor/sensor.h"
+#include "sensor/calibration.h"
+#include "connection/esb.h"
 #include "build_defines.h"
 
 #define USB DT_NODELABEL(usbd)

@@ -1,8 +1,8 @@
-#include "globals.h"
-#include "sensor.h"
-#include "calibration.h"
-#include "connection.h"
-#include "esb.h"
+#include "../globals.h"
+#include "../sensor/sensor.h"
+#include "../sensor/calibration.h"
+#include "../connection/connection.h"
+#include "../connection/esb.h"
 
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>

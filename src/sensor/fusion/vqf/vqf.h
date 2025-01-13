@@ -20,24 +20,29 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#ifndef SLIMENRF_SENSOR_EXT
-#define SLIMENRF_SENSOR_EXT
+#ifndef SLIMENRF_VQF
+#define SLIMENRF_VQF
 
-#include "sensor.h"
+#include "../../sensor.h"
 
-int mag_ext_setup(const sensor_imu_t *imu, const sensor_mag_t *mag, uint8_t addr);
+void vqf_init(float g_time, float a_time, float m_time);
+void vqf_load(const void *data);
+void vqf_save(void *data);
 
-int mag_ext_init(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
-void mag_ext_shutdown(const struct i2c_dt_spec *dev_i2c);
+void vqf_update_gyro(float *g, float time);
+void vqf_update_accel(float *a, float time);
+void vqf_update_mag(float *m, float time);
+void vqf_update(float *g, float *a, float *m, float time);
 
-int mag_ext_update_odr(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time);
+void vqf_get_gyro_bias(float *g_off);
+void vqf_set_gyro_bias(float *g_off);
 
-void mag_ext_mag_oneshot(const struct i2c_dt_spec *dev_i2c);
-void mag_ext_mag_read(const struct i2c_dt_spec *dev_i2c, float m[3]);
-float mag_ext_temp_read(const struct i2c_dt_spec *dev_i2c, float bias[3]);
+void vqf_update_gyro_sanity(float *g, float *m);
+int vqf_get_gyro_sanity(void);
 
-void mag_ext_mag_process(uint8_t *raw_m, float m[3]);
+void vqf_get_lin_a(float *lin_a);
+void vqf_get_quat(float *q);
 
-extern const sensor_mag_t sensor_mag_ext;
+extern const sensor_fusion_t sensor_fusion_vqf;
 
 #endif

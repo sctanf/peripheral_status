@@ -1,7 +1,7 @@
 #ifndef AK09940_h
 #define AK09940_h
 
-#include "../../sensor.h"
+#include "../sensor.h"
 
 // https://www.akm.com/content/dam/documents/products/tri-axis-magnetic-sensor/ak09940a/ak09940a-en-datasheet-myakm.pdf
 #define AK09940_ST   0x0F
