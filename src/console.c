@@ -1,26 +1,35 @@
-#include "globals.h"
-#include "system/system.h"
-#include "sensor/sensor.h"
-#include "sensor/calibration.h"
-#include "connection/esb.h"
 #include "build_defines.h"
+#include "connection/esb.h"
+#include "globals.h"
+#include "sensor/calibration.h"
+#include "sensor/sensor.h"
+#include "system/system.h"
 
 #define USB DT_NODELABEL(usbd)
 #if DT_NODE_HAS_STATUS(USB, okay) && CONFIG_USE_SLIMENRF_CONSOLE
 
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/class/usb_hid.h>
-#include <zephyr/console/console.h>
-#include <zephyr/sys/reboot.h>
-#include <zephyr/logging/log_ctrl.h>
-
 #include <ctype.h>
+#include <zephyr/console/console.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log_ctrl.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/usb/class/usb_hid.h>
+#include <zephyr/usb/usb_device.h>
 
 LOG_MODULE_REGISTER(console, LOG_LEVEL_INF);
 
 static void usb_init_thread(void);
-K_THREAD_DEFINE(usb_init_thread_id, 256, usb_init_thread, NULL, NULL, NULL, 6, 0, 500); // Wait before enabling USB
+K_THREAD_DEFINE(
+	usb_init_thread_id,
+	256,
+	usb_init_thread,
+	NULL,
+	NULL,
+	NULL,
+	6,
+	0,
+	500
+);  // Wait before enabling USB
 
 static void console_thread(void);
 static struct k_thread console_thread_id;
@@ -31,10 +40,10 @@ static K_THREAD_STACK_DEFINE(console_thread_id_stack, 512);
 #define NRF5_BOOTLOADER CONFIG_BOARD_HAS_NRF5_BOOTLOADER
 
 #if NRF5_BOOTLOADER
-static const struct device *gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
+static const struct device* gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 #endif
 
-static const char *meows[] = {
+static const char* meows[] = {
 	"Meow",
 	"Meow meow",
 	"Mrrrp",
@@ -53,93 +62,132 @@ static const char *meows[] = {
 	"purr",
 };
 
-static const char *meow_punctuations[] = {
-	".",
-	"?",
-	"!",
-	"-",
-	"~",
-	""
-};
+static const char* meow_punctuations[] = {".", "?", "!", "-", "~", ""};
 
-static const char *meow_suffixes[] = {
-	" :3",
-	" :3c",
-	" ;3",
-	" ;3c",
-	" x3",
-	" x3c",
-	" X3",
-	" X3c",
-	" >:3",
-	" >:3c",
-	" >;3",
-	" >;3c",
-	""
-};
+static const char* meow_suffixes[]
+	= {" :3",
+	   " :3c",
+	   " ;3",
+	   " ;3c",
+	   " x3",
+	   " x3c",
+	   " X3",
+	   " X3c",
+	   " >:3",
+	   " >:3c",
+	   " >;3",
+	   " >;3c",
+	   ""};
 
-static void status_cb(enum usb_dc_status_code status, const uint8_t *param)
-{
-	const struct log_backend *backend = log_backend_get_by_name("log_backend_uart");
-	switch (status)
-	{
-	case USB_DC_CONNECTED:
-		set_status(SYS_STATUS_USB_CONNECTED, true);
-		log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
-		k_thread_create(&console_thread_id, console_thread_id_stack, K_THREAD_STACK_SIZEOF(console_thread_id_stack), (k_thread_entry_t)console_thread, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
-		break;
-	case USB_DC_DISCONNECTED:
-		set_status(SYS_STATUS_USB_CONNECTED, false);
-		k_thread_abort(&console_thread_id);
-		log_backend_disable(backend);
-		break;
-	default:
-		LOG_DBG("status %u unhandled", status);
-		break;
+static void status_cb(enum usb_dc_status_code status, const uint8_t* param) {
+	const struct log_backend* backend = log_backend_get_by_name("log_backend_uart");
+	switch (status) {
+		case USB_DC_CONNECTED:
+			set_status(SYS_STATUS_USB_CONNECTED, true);
+			log_backend_enable(backend, backend->cb->ctx, CONFIG_LOG_MAX_LEVEL);
+			k_thread_create(
+				&console_thread_id,
+				console_thread_id_stack,
+				K_THREAD_STACK_SIZEOF(console_thread_id_stack),
+				(k_thread_entry_t)console_thread,
+				NULL,
+				NULL,
+				NULL,
+				6,
+				0,
+				K_NO_WAIT
+			);
+			break;
+		case USB_DC_DISCONNECTED:
+			set_status(SYS_STATUS_USB_CONNECTED, false);
+			k_thread_abort(&console_thread_id);
+			log_backend_disable(backend);
+			break;
+		default:
+			LOG_DBG("status %u unhandled", status);
+			break;
 	}
 }
 
-static void usb_init_thread(void)
-{
-	usb_enable(status_cb);
-}
+static void usb_init_thread(void) { usb_enable(status_cb); }
 
-static void print_info(void)
-{
+static void print_info(void) {
 	printk(CONFIG_USB_DEVICE_MANUFACTURER " " CONFIG_USB_DEVICE_PRODUCT "\n");
 	printk(FW_STRING);
 
 	printk("\nBoard configuration: " CONFIG_BOARD "\n");
 	printk("SOC: " CONFIG_SOC "\n");
 
-	printk("\nIMU address: 0x%02X, register: 0x%02X\n", retained.imu_addr, retained.imu_reg);
-	printk("Magnetometer address: 0x%02X, register: 0x%02X\n", retained.mag_addr, retained.mag_reg);
+	printk(
+		"\nIMU address: 0x%02X, register: 0x%02X\n",
+		retained.imu_addr,
+		retained.imu_reg
+	);
+	printk(
+		"Magnetometer address: 0x%02X, register: 0x%02X\n",
+		retained.mag_addr,
+		retained.mag_reg
+	);
 
 	printk("\nIMU: %s\n", sensor_get_sensor_imu_name());
 	printk("Magnetometer: %s\n", sensor_get_sensor_mag_name());
 
 #if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
 	printk("\nAccelerometer matrix:\n");
-	for (int i = 0; i < 3; i++)
-		printk("%.5f %.5f %.5f %.5f\n", (double)retained.accBAinv[0][i], (double)retained.accBAinv[1][i], (double)retained.accBAinv[2][i], (double)retained.accBAinv[3][i]);
+	for (int i = 0; i < 3; i++) {
+		printk(
+			"%.5f %.5f %.5f %.5f\n",
+			(double)retained.accBAinv[0][i],
+			(double)retained.accBAinv[1][i],
+			(double)retained.accBAinv[2][i],
+			(double)retained.accBAinv[3][i]
+		);
+	}
 #else
-	printk("\nAccelerometer bias: %.5f %.5f %.5f\n", (double)retained.accelBias[0], (double)retained.accelBias[1], (double)retained.accelBias[2]);
+	printk(
+		"\nAccelerometer bias: %.5f %.5f %.5f\n",
+		(double)retained.accelBias[0],
+		(double)retained.accelBias[1],
+		(double)retained.accelBias[2]
+	);
 #endif
-	printk("Gyroscope bias: %.5f %.5f %.5f\n", (double)retained.gyroBias[0], (double)retained.gyroBias[1], (double)retained.gyroBias[2]);
-	printk("Magnetometer bridge offset: %.5f %.5f %.5f\n", (double)retained.magBias[0], (double)retained.magBias[1], (double)retained.magBias[2]);
+	printk(
+		"Gyroscope bias: %.5f %.5f %.5f\n",
+		(double)retained.gyroBias[0],
+		(double)retained.gyroBias[1],
+		(double)retained.gyroBias[2]
+	);
+	printk(
+		"Magnetometer bridge offset: %.5f %.5f %.5f\n",
+		(double)retained.magBias[0],
+		(double)retained.magBias[1],
+		(double)retained.magBias[2]
+	);
 	printk("Magnetometer matrix:\n");
-	for (int i = 0; i < 3; i++)
-		printk("%.5f %.5f %.5f %.5f\n", (double)retained.magBAinv[0][i], (double)retained.magBAinv[1][i], (double)retained.magBAinv[2][i], (double)retained.magBAinv[3][i]);
+	for (int i = 0; i < 3; i++) {
+		printk(
+			"%.5f %.5f %.5f %.5f\n",
+			(double)retained.magBAinv[0][i],
+			(double)retained.magBAinv[1][i],
+			(double)retained.magBAinv[2][i],
+			(double)retained.magBAinv[3][i]
+		);
+	}
 
 	printk("\nFusion: %s\n", sensor_get_sensor_fusion_name());
 
 	printk("\nTracker ID: %u\n", retained.paired_addr[1]);
-	printk("Device address: %012llX\n", *(uint64_t *)NRF_FICR->DEVICEADDR & 0xFFFFFFFFFFFF);
-	printk("Receiver address: %012llX\n", (*(uint64_t *)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF);
+	printk(
+		"Device address: %012llX\n",
+		*(uint64_t*)NRF_FICR->DEVICEADDR & 0xFFFFFFFFFFFF
+	);
+	printk(
+		"Receiver address: %012llX\n",
+		(*(uint64_t*)&retained.paired_addr[0] >> 16) & 0xFFFFFFFFFFFF
+	);
 }
 
-static void print_uptime(const uint64_t ticks, const char *name)
-{
+static void print_uptime(const uint64_t ticks, const char* name) {
 	uint64_t uptime = k_ticks_to_us_floor64(ticks);
 
 	uint32_t hours = uptime / 3600000000;
@@ -151,29 +199,43 @@ static void print_uptime(const uint64_t ticks, const char *name)
 	uint16_t milliseconds = uptime / 1000;
 	uint16_t microseconds = uptime % 1000;
 
-	printk("%s: %02u:%02u:%02u.%03u,%03u\n", name, hours, minutes, seconds, milliseconds, microseconds);
+	printk(
+		"%s: %02u:%02u:%02u.%03u,%03u\n",
+		name,
+		hours,
+		minutes,
+		seconds,
+		milliseconds,
+		microseconds
+	);
 }
 
-static void print_meow(void)
-{
+static void print_meow(void) {
 	int64_t ticks = k_uptime_ticks();
 
-	ticks %= ARRAY_SIZE(meows) * ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes); // silly number generator
+	ticks %= ARRAY_SIZE(meows) * ARRAY_SIZE(meow_punctuations)
+		   * ARRAY_SIZE(meow_suffixes);  // silly number generator
 	uint8_t meow = ticks / (ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes));
 	ticks %= (ARRAY_SIZE(meow_punctuations) * ARRAY_SIZE(meow_suffixes));
 	uint8_t punctuation = ticks / ARRAY_SIZE(meow_suffixes);
 	uint8_t suffix = ticks % ARRAY_SIZE(meow_suffixes);
 
-	printk("%s%s%s\n", meows[meow], meow_punctuations[punctuation], meow_suffixes[suffix]);
+	printk(
+		"%s%s%s\n",
+		meows[meow],
+		meow_punctuations[punctuation],
+		meow_suffixes[suffix]
+	);
 }
 
-static void console_thread(void)
-{
+static void console_thread(void) {
 	console_getline_init();
-	while (log_data_pending())
+	while (log_data_pending()) {
 		k_usleep(1);
+	}
 	k_msleep(100);
-	printk("*** " CONFIG_USB_DEVICE_MANUFACTURER " " CONFIG_USB_DEVICE_PRODUCT " ***\n");
+	printk("*** " CONFIG_USB_DEVICE_MANUFACTURER " " CONFIG_USB_DEVICE_PRODUCT " ***\n"
+	);
 	printk(FW_STRING);
 	printk("info                         Get device information\n");
 	printk("uptime                       Get device uptime\n");
@@ -206,47 +268,40 @@ static void console_thread(void)
 	uint8_t command_meow[] = "meow";
 
 	while (1) {
-		uint8_t *line = console_getline();
-		for (uint8_t *p = line; *p; ++p) {
+		uint8_t* line = console_getline();
+		for (uint8_t* p = line; *p; ++p) {
 			*p = tolower(*p);
 		}
 
-		if (memcmp(line, command_info, sizeof(command_info)) == 0)
-		{
+		if (memcmp(line, command_info, sizeof(command_info)) == 0) {
 			print_info();
-		}
-		else if (memcmp(line, command_uptime, sizeof(command_uptime)) == 0)
-		{
+		} else if (memcmp(line, command_uptime, sizeof(command_uptime)) == 0) {
 			uint64_t uptime = k_uptime_ticks();
 			print_uptime(uptime, "Uptime");
-			print_uptime(uptime - retained.uptime_latest + retained.uptime_sum, "Accumulated");
-		}
-		else if (memcmp(line, command_reboot, sizeof(command_reboot)) == 0)
-		{
+			print_uptime(
+				uptime - retained.uptime_latest + retained.uptime_sum,
+				"Accumulated"
+			);
+		} else if (memcmp(line, command_reboot, sizeof(command_reboot)) == 0) {
 			sys_request_system_reboot();
-		}
-		else if (memcmp(line, command_calibrate, sizeof(command_calibrate)) == 0)
-		{
-//			reboot_counter_write(101);
+		} else if (memcmp(line, command_calibrate, sizeof(command_calibrate)) == 0) {
+			//			reboot_counter_write(101);
 			sensor_request_calibration();
 			sys_request_system_reboot();
 		}
 #if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
-		else if (memcmp(line, command_6_side, sizeof(command_6_side)) == 0)
-		{
+		else if (memcmp(line, command_6_side, sizeof(command_6_side)) == 0) {
 			sensor_request_calibration_6_side();
 			sys_request_system_reboot();
 		}
 #endif
-		else if (memcmp(line, command_pair, sizeof(command_pair)) == 0) 
-		{
-//			reboot_counter_write(102);
+		else if (memcmp(line, command_pair, sizeof(command_pair)) == 0) {
+			//			reboot_counter_write(102);
 			esb_reset_pair();
 			sys_request_system_reboot();
 		}
 #if DFU_EXISTS
-		else if (memcmp(line, command_dfu, sizeof(command_dfu)) == 0)
-		{
+		else if (memcmp(line, command_dfu, sizeof(command_dfu)) == 0) {
 #if ADAFRUIT_BOOTLOADER
 			NRF_POWER->GPREGRET = 0x57;
 			sys_request_system_reboot();
@@ -256,12 +311,9 @@ static void console_thread(void)
 #endif
 		}
 #endif
-		else if (memcmp(line, command_meow, sizeof(command_meow)) == 0) 
-		{
+		else if (memcmp(line, command_meow, sizeof(command_meow)) == 0) {
 			print_meow();
-		}
-		else
-		{
+		} else {
 			printk("Unknown command\n");
 		}
 	}

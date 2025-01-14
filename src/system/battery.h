@@ -7,6 +7,9 @@
 #ifndef APPLICATION_BATTERY_H_
 #define APPLICATION_BATTERY_H_
 
+#include <stdbool.h>
+#include <zephyr/types.h>
+
 /** Enable or disable measurement of the battery voltage.
  *
  * @param enable true to enable, false to disable
@@ -47,11 +50,11 @@ struct battery_level_point {
  * @return the estimated remaining capacity in parts per ten
  * thousand.
  */
-unsigned int battery_level_pptt(unsigned int batt_mV,
-				const struct battery_level_point *curve);
+unsigned int
+battery_level_pptt(unsigned int batt_mV, const struct battery_level_point* curve);
 
 unsigned int read_batt(void);
 
-unsigned int read_batt_mV(int *out);
+unsigned int read_batt_mV(int* out);
 
 #endif /* APPLICATION_BATTERY_H_ */
