@@ -16,9 +16,9 @@
 //------------------------------------------------------------------------------
 // Function declarations
 
-void FusionOffsetInitialise2(FusionOffset *const offset, const unsigned int sampleRate);
+void FusionOffsetInitialise2(FusionOffset* const offset, const unsigned int sampleRate);
 
-FusionVector FusionOffsetUpdate2(FusionOffset *const offset, FusionVector gyroscope);
+FusionVector FusionOffsetUpdate2(FusionOffset* const offset, FusionVector gyroscope);
 
 #endif
 

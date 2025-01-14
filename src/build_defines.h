@@ -20,10 +20,9 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
+#include "app_version.h"
 #include "sensor/sensors_enum.h"
 #include "system/status.h"
-
-#include "app_version.h"
 
 #define FW_NAME CONFIG_NCS_APPLICATION_BOOT_BANNER_STRING
 #define FW_VERSION_MAJOR APP_VERSION_MAJOR
@@ -128,156 +127,151 @@ static uint8_t get_server_constant_tracker_status(int status) __attribute__((unu
 #define FW_MCU 0
 #endif
 
-static uint8_t get_server_constant_imu_id(int id)
-{
-	switch (id)
-	{
-	case IMU_BMI160:
-		return SVR_IMU_BMI160;
-	case IMU_BMI270:
-		return SVR_IMU_BMI270;
-	case IMU_BMI323:
-		return 0;
-	case IMU_MPU6050:
-		return SVR_IMU_MPU6050;
-	case IMU_MPU6500:
-		return SVR_IMU_MPU6500;
-	case IMU_MPU9250:
-		return SVR_IMU_MPU9250;
-	case IMU_ICM20948:
-		return SVR_IMU_ICM20948;
-	case IMU_ICM42688:
-		return SVR_IMU_ICM42688;
-	case IMU_ICM45686:
-		return 0;
-	case IMU_ISM330IS:
-		return 0;
-	case IMU_LSM6DS3:
-		return 0;
-	case IMU_LSM6DSM:
-		return SVR_IMU_LSM6DS3TRC;
-	case IMU_LSM6DSR:
-		return SVR_IMU_LSM6DSR;
-	case IMU_LSM6DSO:
-		return SVR_IMU_LSM6DSO;
-	case IMU_LSM6DST:
-		return 0;
-	case IMU_LSM6DSV:
-		return SVR_IMU_LSM6DSV;
-	case IMU_ISM330BX:
-		return SVR_IMU_LSM6DSV; // not really
-	default:
-		return SVR_IMU_UNKNOWN;
+static uint8_t get_server_constant_imu_id(int id) {
+	switch (id) {
+		case IMU_BMI160:
+			return SVR_IMU_BMI160;
+		case IMU_BMI270:
+			return SVR_IMU_BMI270;
+		case IMU_BMI323:
+			return 0;
+		case IMU_MPU6050:
+			return SVR_IMU_MPU6050;
+		case IMU_MPU6500:
+			return SVR_IMU_MPU6500;
+		case IMU_MPU9250:
+			return SVR_IMU_MPU9250;
+		case IMU_ICM20948:
+			return SVR_IMU_ICM20948;
+		case IMU_ICM42688:
+			return SVR_IMU_ICM42688;
+		case IMU_ICM45686:
+			return 0;
+		case IMU_ISM330IS:
+			return 0;
+		case IMU_LSM6DS3:
+			return 0;
+		case IMU_LSM6DSM:
+			return SVR_IMU_LSM6DS3TRC;
+		case IMU_LSM6DSR:
+			return SVR_IMU_LSM6DSR;
+		case IMU_LSM6DSO:
+			return SVR_IMU_LSM6DSO;
+		case IMU_LSM6DST:
+			return 0;
+		case IMU_LSM6DSV:
+			return SVR_IMU_LSM6DSV;
+		case IMU_ISM330BX:
+			return SVR_IMU_LSM6DSV;  // not really
+		default:
+			return SVR_IMU_UNKNOWN;
 	}
 }
 
 // does not exist in server enums yet
-static uint8_t get_server_constant_mag_id(int id)
-{
-	switch (id)
-	{
-	case MAG_HMC5883L:
-		return 0;
-	case MAG_QMC5883L:
-		return 0;
-	case MAG_AK8963:
-		return 0;
-	case MAG_AK09916:
-		return 0;
-	case MAG_BMM150:
-		return 0;
-	case MAG_BMM350:
-		return 0;
-	case MAG_LIS2MDL:
-		return 0;
-	case MAG_LIS3MDL:
-		return 0;
-	case MAG_MMC34160PJ:
-		return 0;
-	case MAG_MMC3630KJ:
-		return 0;
-	case MAG_MMC5633NJL:
-		return 0;
-	case MAG_MMC5616WA:
-		return 0;
-	case MAG_MMC5983MA:
-		return 0;
-	default:
-		return 0;
+static uint8_t get_server_constant_mag_id(int id) {
+	switch (id) {
+		case MAG_HMC5883L:
+			return 0;
+		case MAG_QMC5883L:
+			return 0;
+		case MAG_AK8963:
+			return 0;
+		case MAG_AK09916:
+			return 0;
+		case MAG_BMM150:
+			return 0;
+		case MAG_BMM350:
+			return 0;
+		case MAG_LIS2MDL:
+			return 0;
+		case MAG_LIS3MDL:
+			return 0;
+		case MAG_MMC34160PJ:
+			return 0;
+		case MAG_MMC3630KJ:
+			return 0;
+		case MAG_MMC5633NJL:
+			return 0;
+		case MAG_MMC5616WA:
+			return 0;
+		case MAG_MMC5983MA:
+			return 0;
+		default:
+			return 0;
 	}
 }
 
-static uint8_t get_server_constant_tracker_status(int status)
-{
-	if (status & (SYS_STATUS_SENSOR_ERROR | SYS_STATUS_SYSTEM_ERROR))
+static uint8_t get_server_constant_tracker_status(int status) {
+	if (status & (SYS_STATUS_SENSOR_ERROR | SYS_STATUS_SYSTEM_ERROR)) {
 		return SVR_STATUS_ERROR;
-	else
+	} else {
 		return SVR_STATUS_OK;
+	}
 }
 
 // https://stackoverflow.com/questions/11697820/how-to-use-date-and-time-predefined-macros-in-as-two-integers-then-stri
-#define COMPUTE_BUILD_YEAR \
-	( \
-		(__DATE__[ 7] - '0') * 1000 + \
-		(__DATE__[ 8] - '0') *  100 + \
-		(__DATE__[ 9] - '0') *   10 + \
-		(__DATE__[10] - '0') \
-	)
+#define COMPUTE_BUILD_YEAR                                                             \
+	((__DATE__[7] - '0') * 1000 + (__DATE__[8] - '0') * 100 + (__DATE__[9] - '0') * 10 \
+	 + (__DATE__[10] - '0'))
 
 #define COMPUTE_BUILD_DAY \
-	( \
-		((__DATE__[4] >= '0') ? (__DATE__[4] - '0') * 10 : 0) + \
-		(__DATE__[5] - '0') \
-	)
+	(((__DATE__[4] >= '0') ? (__DATE__[4] - '0') * 10 : 0) + (__DATE__[5] - '0'))
 
-#define BUILD_MONTH_IS_JAN (__DATE__[0] == 'J' && __DATE__[1] == 'a' && __DATE__[2] == 'n')
+#define BUILD_MONTH_IS_JAN \
+	(__DATE__[0] == 'J' && __DATE__[1] == 'a' && __DATE__[2] == 'n')
 #define BUILD_MONTH_IS_FEB (__DATE__[0] == 'F')
-#define BUILD_MONTH_IS_MAR (__DATE__[0] == 'M' && __DATE__[1] == 'a' && __DATE__[2] == 'r')
+#define BUILD_MONTH_IS_MAR \
+	(__DATE__[0] == 'M' && __DATE__[1] == 'a' && __DATE__[2] == 'r')
 #define BUILD_MONTH_IS_APR (__DATE__[0] == 'A' && __DATE__[1] == 'p')
-#define BUILD_MONTH_IS_MAY (__DATE__[0] == 'M' && __DATE__[1] == 'a' && __DATE__[2] == 'y')
-#define BUILD_MONTH_IS_JUN (__DATE__[0] == 'J' && __DATE__[1] == 'u' && __DATE__[2] == 'n')
-#define BUILD_MONTH_IS_JUL (__DATE__[0] == 'J' && __DATE__[1] == 'u' && __DATE__[2] == 'l')
+#define BUILD_MONTH_IS_MAY \
+	(__DATE__[0] == 'M' && __DATE__[1] == 'a' && __DATE__[2] == 'y')
+#define BUILD_MONTH_IS_JUN \
+	(__DATE__[0] == 'J' && __DATE__[1] == 'u' && __DATE__[2] == 'n')
+#define BUILD_MONTH_IS_JUL \
+	(__DATE__[0] == 'J' && __DATE__[1] == 'u' && __DATE__[2] == 'l')
 #define BUILD_MONTH_IS_AUG (__DATE__[0] == 'A' && __DATE__[1] == 'u')
 #define BUILD_MONTH_IS_SEP (__DATE__[0] == 'S')
 #define BUILD_MONTH_IS_OCT (__DATE__[0] == 'O')
 #define BUILD_MONTH_IS_NOV (__DATE__[0] == 'N')
 #define BUILD_MONTH_IS_DEC (__DATE__[0] == 'D')
 
-#define COMPUTE_BUILD_MONTH \
-	( \
-		(BUILD_MONTH_IS_JAN) ?  1 : \
-		(BUILD_MONTH_IS_FEB) ?  2 : \
-		(BUILD_MONTH_IS_MAR) ?  3 : \
-		(BUILD_MONTH_IS_APR) ?  4 : \
-		(BUILD_MONTH_IS_MAY) ?  5 : \
-		(BUILD_MONTH_IS_JUN) ?  6 : \
-		(BUILD_MONTH_IS_JUL) ?  7 : \
-		(BUILD_MONTH_IS_AUG) ?  8 : \
-		(BUILD_MONTH_IS_SEP) ?  9 : \
-		(BUILD_MONTH_IS_OCT) ? 10 : \
-		(BUILD_MONTH_IS_NOV) ? 11 : \
-		(BUILD_MONTH_IS_DEC) ? 12 : \
-		/* error default */  99 \
-	)
+#define COMPUTE_BUILD_MONTH      \
+	((BUILD_MONTH_IS_JAN)   ? 1  \
+	 : (BUILD_MONTH_IS_FEB) ? 2  \
+	 : (BUILD_MONTH_IS_MAR) ? 3  \
+	 : (BUILD_MONTH_IS_APR) ? 4  \
+	 : (BUILD_MONTH_IS_MAY) ? 5  \
+	 : (BUILD_MONTH_IS_JUN) ? 6  \
+	 : (BUILD_MONTH_IS_JUL) ? 7  \
+	 : (BUILD_MONTH_IS_AUG) ? 8  \
+	 : (BUILD_MONTH_IS_SEP) ? 9  \
+	 : (BUILD_MONTH_IS_OCT) ? 10 \
+	 : (BUILD_MONTH_IS_NOV) ? 11 \
+	 : (BUILD_MONTH_IS_DEC) ? 12 \
+							: /* error default */ 99)
 
 #define COMPUTE_BUILD_HOUR ((__TIME__[0] - '0') * 10 + __TIME__[1] - '0')
-#define COMPUTE_BUILD_MIN  ((__TIME__[3] - '0') * 10 + __TIME__[4] - '0')
-#define COMPUTE_BUILD_SEC  ((__TIME__[6] - '0') * 10 + __TIME__[7] - '0')
+#define COMPUTE_BUILD_MIN ((__TIME__[3] - '0') * 10 + __TIME__[4] - '0')
+#define COMPUTE_BUILD_SEC ((__TIME__[6] - '0') * 10 + __TIME__[7] - '0')
 
 #define BUILD_DATE_IS_BAD (__DATE__[0] == '?')
 
-#define BUILD_YEAR  ((BUILD_DATE_IS_BAD) ? 99 : COMPUTE_BUILD_YEAR)
+#define BUILD_YEAR ((BUILD_DATE_IS_BAD) ? 99 : COMPUTE_BUILD_YEAR)
 #define BUILD_MONTH ((BUILD_DATE_IS_BAD) ? 99 : COMPUTE_BUILD_MONTH)
-#define BUILD_DAY   ((BUILD_DATE_IS_BAD) ? 99 : COMPUTE_BUILD_DAY)
+#define BUILD_DAY ((BUILD_DATE_IS_BAD) ? 99 : COMPUTE_BUILD_DAY)
 
 #define BUILD_TIME_IS_BAD (__TIME__[0] == '?')
 
-#define BUILD_HOUR  ((BUILD_TIME_IS_BAD) ? 99 :  COMPUTE_BUILD_HOUR)
-#define BUILD_MIN   ((BUILD_TIME_IS_BAD) ? 99 :  COMPUTE_BUILD_MIN)
-#define BUILD_SEC   ((BUILD_TIME_IS_BAD) ? 99 :  COMPUTE_BUILD_SEC)
+#define BUILD_HOUR ((BUILD_TIME_IS_BAD) ? 99 : COMPUTE_BUILD_HOUR)
+#define BUILD_MIN ((BUILD_TIME_IS_BAD) ? 99 : COMPUTE_BUILD_MIN)
+#define BUILD_SEC ((BUILD_TIME_IS_BAD) ? 99 : COMPUTE_BUILD_SEC)
 
 #define TOSTRING(x) STRINGIFY(x)
 
-#define FW_STRING FW_NAME " " APP_VERSION_EXTENDED_STRING " "\
-	"(Commit " TOSTRING(APP_BUILD_VERSION) ", Build %d-%02d-%02d %02d:%02d:%02d)\n",\
-	BUILD_YEAR, BUILD_MONTH, BUILD_DAY, BUILD_HOUR, BUILD_MIN, BUILD_SEC
+#define FW_STRING                                       \
+	FW_NAME " " APP_VERSION_EXTENDED_STRING             \
+			" "                                         \
+			"(Commit " TOSTRING(APP_BUILD_VERSION       \
+			) ", Build %d-%02d-%02d %02d:%02d:%02d)\n", \
+		BUILD_YEAR, BUILD_MONTH, BUILD_DAY, BUILD_HOUR, BUILD_MIN, BUILD_SEC

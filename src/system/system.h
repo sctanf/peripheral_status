@@ -1,6 +1,9 @@
 #ifndef SLIMENRF_SYSTEM
 #define SLIMENRF_SYSTEM
 
+#include <stdbool.h>
+#include <zephyr/types.h>
+//
 #include "led.h"
 #include "power.h"
 #include "status.h"
@@ -17,9 +20,9 @@ void configure_sense_pins(void);
 uint8_t reboot_counter_read(void);
 void reboot_counter_write(uint8_t reboot_counter);
 
-void sys_write(uint16_t id, void *ptr, const void *data, size_t len);
+void sys_write(uint16_t id, void* ptr, const void* data, size_t len);
 
-int set_sensor_clock(bool enable, float rate, float *actual_rate);
+int set_sensor_clock(bool enable, float rate, float* actual_rate);
 
 bool button_read(void);
 
