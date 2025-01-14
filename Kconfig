@@ -69,7 +69,7 @@ config USER_SHUTDOWN
 
 config USE_IMU_WAKE_UP
     bool "IMU wake up support"
-    default y
+    default n
     help
         Use IMU wake up state if IMU wake up is present.
 
