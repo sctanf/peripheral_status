@@ -96,14 +96,6 @@ void connection_update_status(int status) {
 	tracker_svr_status = get_server_constant_tracker_status(status);
 }
 
-//|b0      |b1      |b2      |b3      |b4      |b5      |b6      |b7      |b8      |b9
-//|b10     |b11     |b12     |b13     |b14     |b15     | |type    |id      |packet data
-//| |0       |id      |batt    |batt_v  |temp    |brd_id  |mcu_id  |resv    |imu_id
-//|mag_id  |fw_date          |major   |minor   |patch   |rssi    | |1       |id      |q0
-//|q1               |q2               |q3               |a0               |a1 |a2 | |2
-//|id      |batt    |batt_v  |temp    |q_buf                              |a0 |a1 |a2
-//|rssi    | |3	   |id      |svr_stat|status  |resv |rssi    |
-
 void connection_write_packet_0()  // device info
 {
 	uint8_t data[16] = {0};
