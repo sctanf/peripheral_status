@@ -8,14 +8,14 @@
 &pinctrl {
 	i2c0_default: i2c0_default {
 		group1 {
-			psels = <NRF_PSEL(TWIM_SDA, 0, 6)>, <NRF_PSEL(TWIM_SCL, 0, 8)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 24)>, <NRF_PSEL(TWIM_SCL, 0, 22)>;
 			bias-disable;
 		};
 	};
 
 	i2c0_sleep: i2c0_sleep {
 		group1 {
-			psels = <NRF_PSEL(TWIM_SDA, 0, 6)>, <NRF_PSEL(TWIM_SCL, 0, 8)>;
+			psels = <NRF_PSEL(TWIM_SDA, 0, 24)>, <NRF_PSEL(TWIM_SCL, 0, 22)>;
 			bias-disable;
 			low-power-enable;
 		};
@@ -71,13 +71,13 @@
 	buttons {
 		compatible = "gpio-keys";
 		button0: button_0 {
-			gpios = <&gpio0 20 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			gpios = <&gpio0 6 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 			label = "Push button switch 0";
 		};
 	};
 
 	aliases {
-		// sw0 = &button0; // Uncomment to Enable SW0
+		 sw0 = &button0; // Uncomment to Enable SW0
 		pwm-led0 = &pwm_led0;
 	};
 
@@ -96,9 +96,11 @@
 	};
 
 	zephyr,user {
-		int0-gpios = <&gpio0 17 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		pwr-gpios = <&gpio0 17 GPIO_OPEN_SOURCE>;
+        gnd-gpios = <&gpio0 20 GPIO_OPEN_DRAIN>;
+		int0-gpios = <&gpio0 2 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
 		led-gpios = <&gpio0 15 GPIO_OPEN_SOURCE>;
-		// clk-gpios = <&gpio0 20 GPIO_OPEN_DRAIN>; // Uncomment and set to correct pin if using an external clock (crystal oscillator)
+		clk-gpios = <&gpio0 29 GPIO_OPEN_DRAIN>; // Uncomment and set to correct pin if using an external clock (crystal oscillator)
 	};
 
 };
