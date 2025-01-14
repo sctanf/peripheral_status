@@ -73,6 +73,12 @@ config USE_IMU_WAKE_UP
     help
         Use IMU wake up state if IMU wake up is present.
 
+config SENSOR_USE_LOW_POWER_2
+    bool "Use additional low power modes"
+    default y
+    help
+        Use a higher latency sensor mode during no motion.
+
 config DELAY_SLEEP_ON_STATUS
     bool "Delay IMU wake up mode on status flags"
     default y

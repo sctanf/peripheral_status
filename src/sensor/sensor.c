@@ -57,6 +57,7 @@ static float last_q[4] = {1.0f, 0.0f, 0.0f, 0.0f};  // vector to hold quaternion
 
 static float q3[4] = {SENSOR_QUATERNION_CORRECTION};  // correction quaternion
 
+static int64_t last_lp2_time = 0;
 static int64_t last_data_time;
 static int64_t last_info_time;
 
@@ -518,7 +519,8 @@ int main_imu_init(void) {
 enum sensor_sensor_mode {
 	//	SENSOR_SENSOR_MODE_OFF,
 	SENSOR_SENSOR_MODE_LOW_NOISE,
-	SENSOR_SENSOR_MODE_LOW_POWER
+	SENSOR_SENSOR_MODE_LOW_POWER,
+	SENSOR_SENSOR_MODE_LOW_POWER_2
 };
 
 static enum sensor_sensor_mode sensor_mode = SENSOR_SENSOR_MODE_LOW_NOISE;
@@ -568,12 +570,21 @@ void main_imu_thread(void) {
 			connection_update_sensor_temp(temp);
 
 			// Read gyroscope (FIFO)
+#if CONFIG_SENSOR_USE_LOW_POWER_2
+			uint8_t* rawData = (uint8_t*)k_malloc(1024);  // Limit FIFO read to 1024 bytes
+			uint16_t packets = sensor_imu->fifo_read(
+				&sensor_imu_dev,
+				rawData,
+				1024
+			);  // TODO: name this better?
+#else
 			uint8_t* rawData = (uint8_t*)k_malloc(512);  // Limit FIFO read to 512 bytes
 			uint16_t packets = sensor_imu->fifo_read(
 				&sensor_imu_dev,
 				rawData,
 				512
 			);  // TODO: name this better?
+#endif
 			LOG_DBG("IMU packet count: %u", packets);
 
 			// Read accelerometer
@@ -619,7 +630,18 @@ void main_imu_thread(void) {
 						break;
 					case SENSOR_SENSOR_MODE_LOW_POWER:
 						set_update_time_ms(33);
-						LOG_INF("Switching sensors to low power");
+						LOG_INF("Switching sensors to low power 1");
+						if (mag_available && mag_enabled) {
+							sensor_mag->update_odr(
+								&sensor_mag_dev,
+								INFINITY,
+								&mag_actual_time
+							);  // standby/oneshot
+						}
+						break;
+					case SENSOR_SENSOR_MODE_LOW_POWER_2:
+						set_update_time_ms(100);
+						LOG_INF("Switching sensors to low power 2");
 						if (mag_available && mag_enabled) {
 							sensor_mag->update_odr(
 								&sensor_mag_dev,
@@ -717,7 +739,7 @@ void main_imu_thread(void) {
 					))  // Probably okay to use the constantly updating last_q
 			{
 				int64_t imu_timeout = CLAMP(
-					last_data_time,
+					last_data_time - last_lp2_time,
 					1 * 1000,
 					15 * 1000
 				);  // Ramp timeout from last_data_time
@@ -732,12 +754,18 @@ void main_imu_thread(void) {
 //					main_imu_suspend(); // TODO: auto suspend, the device should
 //configure WOM ASAP but it does not
 #endif
+#if CONFIG_SENSOR_USE_LOW_POWER_2
+					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER_2;
+#endif
 				} else if (sensor_mode == SENSOR_SENSOR_MODE_LOW_NOISE && k_uptime_get() - last_data_time > 500)  // No motion in last 500ms
 				{
 					LOG_INF("No motion from sensors in 500ms");
 					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER;
 				}
 			} else {
+				if (sensor_mode == SENSOR_SENSOR_MODE_LOW_POWER_2) {
+					last_lp2_time = k_uptime_get();
+				}
 				last_data_time = k_uptime_get();
 				sensor_mode = SENSOR_SENSOR_MODE_LOW_NOISE;
 			}
