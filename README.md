@@ -1,6 +1,5 @@
 # Tracker firmware for SlimeNRF
-
-Firmware for Nordic nRF52 / nRF54L chips.
+Firmware for Nordic nRF52 / nRF54L Series SoC.
 
 Please see https://docs.shinebright.dev/diy/smol-slime.html for more information and usage.
 
