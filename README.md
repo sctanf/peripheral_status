@@ -1,4 +1,7 @@
 # Tracker firmware for SlimeNRF
+Firmware for Nordic nRF52 / nRF54L Series SoC.
+
+Please see https://docs.shinebright.dev/diy/smol-slime.html for more information and usage.
 
 ## Hardware
 - https://github.com/SlimeVR/SlimeVR-Tracker-nRF-PCB
