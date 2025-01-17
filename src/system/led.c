@@ -1,12 +1,12 @@
-#include "led.h"
+#include "globals.h"
+#include "util.h"
 
 #include <math.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 
-#include "globals.h"
-#include "util.h"
+#include "led.h"
 
 LOG_MODULE_REGISTER(led, LOG_LEVEL_INF);
 
@@ -338,8 +338,20 @@ static void led_thread(void) {
 				break;
 			case SYS_LED_PATTERN_PULSE_PERSIST:
 				led_pattern_state = (led_pattern_state + 1) % 1000;
-				float led_value = sinf(led_pattern_state * (M_PI / 1000));
-				led_pin_set(SYS_LED_COLOR_CHARGING, 10000, led_value * 10000);
+				// float led_value = sinf(led_pattern_state * (M_PI / 1000));
+				// led_pin_set(SYS_LED_COLOR_CHARGING, 10000, led_value * 10000);
+				int led_value = led_pattern_state > 500 ? 1000 - led_pattern_state
+														: led_pattern_state;
+				if (led_value < 200) {
+					led_value = (led_value) * 30;
+				} else if (led_value < 300) {
+					led_value = (led_value - 200) * 20 + 6000;
+				} else if (led_value < 400) {
+					led_value = (led_value - 300) * 15 + 8000;
+				} else {
+					led_value = (led_value - 400) * 5 + 9500;
+				}
+				led_pin_set(SYS_LED_COLOR_CHARGING, 10000, led_value);
 				k_msleep(5);
 				break;
 			case SYS_LED_PATTERN_ACTIVE_PERSIST:  // off duration first because the

@@ -1,17 +1,17 @@
-#include "power.h"
+#include "globals.h"
+#include "sensor/sensor.h"
+#include "battery.h"
+#include "connection/connection.h"
+#include "system.h"
+#include "led.h"
+#include "connection/esb.h"
 
-#include <hal/nrf_gpio.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/reboot.h>
+#include <hal/nrf_gpio.h>
 
-#include "battery.h"
-#include "connection/connection.h"
-#include "connection/esb.h"
-#include "globals.h"
-#include "led.h"
-#include "sensor/sensor.h"
-#include "system.h"
+#include "power.h"
 
 enum sys_regulator { SYS_REGULATOR_DCDC, SYS_REGULATOR_LDO };
 
@@ -49,25 +49,20 @@ static const struct gpio_dt_spec ldo_en = GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, ldo
 #pragma message "LDO enable GPIO does not exist"
 #endif
 
-// TODO: the gpio sense is weird, maybe the device will turn back on immediately after
-// shutdown or after (attempting to) enter WOM
-// TODO: there should be a better system of how to handle all system_off cases and all
-// the sense pins
+// TODO: the gpio sense is weird, maybe the device will turn back on immediately after shutdown or after (attempting to) enter WOM
+// TODO: there should be a better system of how to handle all system_off cases and all the sense pins
 // TODO: just changed it make sure to test it thanks
 
 // TODO: should the tracker start again if docking state changes?
 // TODO: keep sending battery state while plugged and docked?
 // TODO: on some boards there is actual power path, try to use the LED in this case
-// TODO: usually charging, i would flash LED but that will drain the battery while it is
-// charging..
+// TODO: usually charging, i would flash LED but that will drain the battery while it is charging..
 // TODO: should not really shut off while plugged in
 
-static void configure_system_off(void) {
-	// TODO: not calling suspend here, because sensor can call it and stop the system
-	// from shutting down since it suspended itself
-	//	main_imu_suspend(); // TODO: when the thread is suspended, its possibly
-	//suspending in the middle of an i2c transaction and this is bad. Instead sensor
-	//should be suspended at a different time
+static void configure_system_off(void)
+{
+	// TODO: not calling suspend here, because sensor can call it and stop the system from shutting down since it suspended itself
+//	main_imu_suspend(); // TODO: when the thread is suspended, its possibly suspending in the middle of an i2c transaction and this is bad. Instead sensor should be suspended at a different time
 	sensor_shutdown();
 	set_led(SYS_LED_PATTERN_OFF_FORCE, SYS_LED_PRIORITY_HIGHEST);
 	float actual_clock_rate;
@@ -111,18 +106,15 @@ void sys_request_WOM(
 		|| !status_ready(
 		))  // Wait for esb to pair in case the user is still trying to pair the device
 	{
-		if (!system_off_timeout) {
-			system_off_timeout
-				= k_uptime_get() + 30000;  // allow system off after 30 seconds if
-										   // status errors are still active
-		}
-		if (k_uptime_get() < system_off_timeout) {
+		if (!system_off_timeout)
+			system_off_timeout = k_uptime_get() + 30000; // allow system off after 30 seconds if status errors are still active
+		if (k_uptime_get() < system_off_timeout)
+		{
 			LOG_INF("IMU wake up not available, waiting on ESB/status ready");
 			return;  // not timed out yet, skip system off
 		}
 		LOG_INF("ESB/status ready timed out");
-		// this may mean the system never enters system off if sys_request_WOM is not
-		// called again after the timeout
+		// this may mean the system never enters system off if sys_request_WOM is not called again after the timeout
 	}
 #endif
 	configure_system_off();  // Common subsystem shutdown and prepare sense pins
@@ -199,11 +191,13 @@ static void power_thread(void) {
 		uint32_t battery_pptt = read_batt_mV(&battery_mV);
 
 		bool abnormal_reading = battery_mV < 100 || battery_mV > 6000;
-		bool battery_available
-			= battery_mV > 1500
-		   && !abnormal_reading;  // Keep working without the battery connected,
-								  // otherwise it is obviously too dead to boot system
-		plugged = battery_mV > 4300 && !abnormal_reading;  // Separate detection of vin
+		bool battery_available = battery_mV > 1500 && !abnormal_reading; // Keep working without the battery connected, otherwise it is obviously too dead to boot system
+		// Separate detection of vin
+		if (!plugged && battery_mV > 4300 && !abnormal_reading) {
+			plugged = true;
+		} else if ((plugged && battery_mV <= 4250) || abnormal_reading) {
+			plugged = false;
+		}
 
 		if (!power_init) {
 			// log battery state once
@@ -246,15 +240,11 @@ static void power_thread(void) {
 		last_battery_pptt_index++;
 		last_battery_pptt_index %= 15;
 
-		// Store the average battery level with hysteresis (Effectively 100-10000 ->
-		// 1-100%)
-		if (average_battery_pptt + 100
-			< last_battery_pptt[15]) {  // Lower bound -100pptt
+		// Store the average battery level with hysteresis (Effectively 100-10000 -> 1-100%)
+		if (average_battery_pptt + 100 < last_battery_pptt[15]) // Lower bound -100pptt
 			last_battery_pptt[15] = average_battery_pptt + 100;
-		} else if (average_battery_pptt > last_battery_pptt[15]) {  // Upper bound
-																	// +0pptt
+		else if (average_battery_pptt > last_battery_pptt[15]) // Upper bound +0pptt
 			last_battery_pptt[15] = average_battery_pptt;
-		}
 
 		connection_update_battery(
 			battery_available,

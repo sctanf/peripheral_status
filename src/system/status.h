@@ -1,9 +1,6 @@
 #ifndef SLIMENRF_SYSTEM_STATUS
 #define SLIMENRF_SYSTEM_STATUS
 
-#include <stdbool.h>
-#include <zephyr/types.h>
-
 enum sys_status {
 	SYS_STATUS_SENSOR_ERROR = 1,
 	SYS_STATUS_CONNECTION_ERROR = 2,

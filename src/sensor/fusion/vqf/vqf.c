@@ -20,13 +20,12 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include <stdbool.h>
-#include <zephyr/types.h>
-//
-#include "../src/vqf.h"  // conflicting with vqf.h in local path
-#include "../vqf/vqf.h"  // conflicting with vqf.h in vqf-c
 #include "globals.h"
 #include "util.h"
+
+#include "../src/vqf.h" // conflicting with vqf.h in local path
+
+#include "../vqf/vqf.h" // conflicting with vqf.h in vqf-c
 
 #ifndef DEG_TO_RAD
 #define DEG_TO_RAD (M_PI / 180.0f)
@@ -40,21 +39,18 @@ static float last_a[3] = {0};
 
 static void set_params() {
 	init_params(&params);
-	// The smaller the value, the faster the estimation
-	params.biasSigmaInit = 1.0f;
-	// It determines the bias estimation speed. The smaller the value, the faster the
-	// estimation. A value between 30 and 100 is appropriate.
+	//The smaller the value, the faster the estimation
+	params.biasSigmaInit = 1.0f; 
+	//It determines the bias estimation speed. The smaller the value, the faster the estimation. A value between 30 and 100 is appropriate.
 	params.biasForgettingTime = 100.0f;
 	// It corrects the vertical yaw. 0.001~0.0001 is appropriate.
 	params.biasVerticalForgettingFactor = 0.0001;
-	//(MBE) The larger the value, the more stable it is, but the estimation becomes
-	// slower.
+	//(MBE) The larger the value, the more stable it is, but the estimation becomes slower.
 	params.biasSigmaMotion = 0.1f;
 	//(RBE) The lower the value, the more accurate the bias estimation becomes.
 	params.biasSigmaRest = 0.01f;
-	// These are the threshold values for the gyro and accelerometer to determine a
-	// resting state.
-	params.restThGyr = 1.0f;
+	//These are the threshold values for the gyro and accelerometer to determine a resting state.
+	params.restThGyr = 1.0f; 
 	params.restThAcc = 0.25;
 }
 

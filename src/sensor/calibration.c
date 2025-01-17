@@ -20,16 +20,17 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "calibration.h"
-
-#include <math.h>
-
 #include "globals.h"
-#include "magneto/magneto1_4.h"
 #include "system/system.h"
 #include "util.h"
 
-static float accelBias[3] = {0}, gyroBias[3] = {0}, magBias[3] = {0};  // offset biases
+#include <math.h>
+
+#include "magneto/magneto1_4.h"
+
+#include "calibration.h"
+
+static float accelBias[3] = {0}, gyroBias[3] = {0}, magBias[3] = {0}; // offset biases
 
 static float magBAinv[4][3];
 static float accBAinv[4][3];
@@ -108,8 +109,7 @@ void sensor_calibrate_imu(
 	LOG_INF("Rest the device on a stable surface");
 
 	set_led(SYS_LED_PATTERN_LONG, SYS_LED_PRIORITY_SENSOR);
-	if (!wait_for_motion(sensor_imu, dev_i2c, false, 6))  // Wait for accelerometer to
-														  // settle, timeout 3s
+	if (!wait_for_motion(sensor_imu, dev_i2c, false, 6)) // Wait for accelerometer to settle, timeout 3s
 	{
 		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
 		return;  // Timeout, calibration failed
@@ -120,8 +120,7 @@ void sensor_calibrate_imu(
 
 	LOG_INF("Reading data");
 	sensor_calibration_clear();
-	if (sensor_offsetBias(sensor_imu, dev_i2c, accelBias, gyroBias))  // This takes
-																	  // about 3s
+	if (sensor_offsetBias(sensor_imu, dev_i2c, accelBias, gyroBias)) // This takes about 3s
 	{
 		LOG_INF("Motion detected");
 		accelBias[0] = NAN;  // invalidate calibration
@@ -150,14 +149,14 @@ void sensor_calibrate_imu(
 	}
 	if (sensor_calibration_validate()) {
 		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
-		//		LOG_INF("Restoring previous calibration");
-		//		memcpy(accelBias, last_accelBias, sizeof(accelBias)); // restore last
-		//calibration 		memcpy(gyroBias, last_gyroBias, sizeof(gyroBias)); // restore last
-		//calibration #if !CONFIG_SENSOR_USE_6_SIDE_CALIBRATION 		LOG_INF("Accelerometer
-		//bias: %.5f %.5f %.5f", (double)accelBias[0], (double)accelBias[1],
-		//(double)accelBias[2]); #endif 		LOG_INF("Gyroscope bias: %.5f %.5f %.5f",
-		//(double)gyroBias[0], (double)gyroBias[1], (double)gyroBias[2]);
-		//		sensor_calibration_validate(); // additionally verify old calibration
+//		LOG_INF("Restoring previous calibration");
+//		memcpy(accelBias, last_accelBias, sizeof(accelBias)); // restore last calibration
+//		memcpy(gyroBias, last_gyroBias, sizeof(gyroBias)); // restore last calibration
+//#if !CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
+//		LOG_INF("Accelerometer bias: %.5f %.5f %.5f", (double)accelBias[0], (double)accelBias[1], (double)accelBias[2]);
+//#endif
+//		LOG_INF("Gyroscope bias: %.5f %.5f %.5f", (double)gyroBias[0], (double)gyroBias[1], (double)gyroBias[2]);
+//		sensor_calibration_validate(); // additionally verify old calibration
 		return;
 	}
 
@@ -180,24 +179,17 @@ void sensor_calibrate_6_side(
 	sensor_6_sideBias(sensor_imu, dev_i2c);
 	sys_write(MAIN_ACC_6_BIAS_ID, &retained.accBAinv, accBAinv, sizeof(accBAinv));
 	LOG_INF("Accelerometer matrix:");
-	for (int i = 0; i < 3; i++) {
-		LOG_INF(
-			"%.5f %.5f %.5f %.5f",
-			(double)accBAinv[0][i],
-			(double)accBAinv[1][i],
-			(double)accBAinv[2][i],
-			(double)accBAinv[3][i]
-		);
-	}
-	if (sensor_calibration_validate_6_side()) {
-		//		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
-		//		LOG_INF("Restoring previous calibration");
-		//		memcpy(accBAinv, last_accBAinv, sizeof(accBAinv)); // restore last
-		//calibration 		LOG_INF("Accelerometer matrix:"); 		for (int i = 0; i < 3; i++)
-		//			LOG_INF("%.5f %.5f %.5f %.5f", (double)accBAinv[0][i],
-		//(double)accBAinv[1][i], (double)accBAinv[2][i], (double)accBAinv[3][i]);
-		//		sensor_calibration_validate_6_side(); // additionally verify old
-		//calibration
+	for (int i = 0; i < 3; i++)
+		LOG_INF("%.5f %.5f %.5f %.5f", (double)accBAinv[0][i], (double)accBAinv[1][i], (double)accBAinv[2][i], (double)accBAinv[3][i]);
+	if (sensor_calibration_validate_6_side())
+	{
+//		set_led(SYS_LED_PATTERN_OFF, SYS_LED_PRIORITY_SENSOR);
+//		LOG_INF("Restoring previous calibration");
+//		memcpy(accBAinv, last_accBAinv, sizeof(accBAinv)); // restore last calibration
+//		LOG_INF("Accelerometer matrix:");
+//		for (int i = 0; i < 3; i++)
+//			LOG_INF("%.5f %.5f %.5f %.5f", (double)accBAinv[0][i], (double)accBAinv[1][i], (double)accBAinv[2][i], (double)accBAinv[3][i]);
+//		sensor_calibration_validate_6_side(); // additionally verify old calibration
 		return;
 	}
 
@@ -209,16 +201,13 @@ void sensor_calibrate_6_side(
 void sensor_sample_mag(const float a[3], const float m[3]) {
 	magneto_sample(m[0], m[1], m[2], ata, &norm_sum, &sample_count);  // 400us
 	int new_mag_progress = mag_progress;
-	new_mag_progress |= (-1.2f < a[0] && a[0] < -0.8f ? 1 << 0 : 0)
-					  | (1.2f > a[0] && a[0] > 0.8f ? 1 << 1 : 0)
-					  |  // dumb check if all accel axes were reached for calibration,
-						 // assume the user is intentionally doing this
-						(-1.2f < a[1] && a[1] < -0.8f ? 1 << 2 : 0)
-					  | (1.2f > a[1] && a[1] > 0.8f ? 1 << 3 : 0)
-					  | (-1.2f < a[2] && a[2] < -0.8f ? 1 << 4 : 0)
-					  | (1.2f > a[2] && a[2] > 0.8f ? 1 << 5 : 0);
-	if (new_mag_progress > mag_progress && new_mag_progress == last_mag_progress) {
-		if (k_uptime_get() > mag_progress_time) {
+	new_mag_progress |= (-1.2f < a[0] && a[0] < -0.8f ? 1 << 0 : 0) | (1.2f > a[0] && a[0] > 0.8f ? 1 << 1 : 0) | // dumb check if all accel axes were reached for calibration, assume the user is intentionally doing this
+		(-1.2f < a[1] && a[1] < -0.8f ? 1 << 2 : 0) | (1.2f > a[1] && a[1] > 0.8f ? 1 << 3 : 0) |
+		(-1.2f < a[2] && a[2] < -0.8f ? 1 << 4 : 0) | (1.2f > a[2] && a[2] > 0.8f ? 1 << 5 : 0);
+	if (new_mag_progress > mag_progress && new_mag_progress == last_mag_progress)
+	{
+		if (k_uptime_get() > mag_progress_time)
+		{
 			mag_progress = new_mag_progress;
 			// LOG_INF("Magnetometer calibration progress: %d", new_mag_progress);
 			LOG_INF(

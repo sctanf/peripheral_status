@@ -1,18 +1,18 @@
-#include "system.h"
-
-#include <hal/nrf_gpio.h>
-#include <zephyr/drivers/flash.h>
-#include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/pwm.h>
-#include <zephyr/fs/nvs.h>
-#include <zephyr/storage/flash_map.h>
-#include <zephyr/sys/reboot.h>
-
+#include "globals.h"
+#include "sensor/sensor.h"
+#include "sensor/calibration.h"
 #include "connection/connection.h"
 #include "connection/esb.h"
-#include "globals.h"
-#include "sensor/calibration.h"
-#include "sensor/sensor.h"
+
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pwm.h>
+#include <zephyr/sys/reboot.h>
+#include <zephyr/drivers/flash.h>
+#include <zephyr/storage/flash_map.h>
+#include <zephyr/fs/nvs.h>
+#include <hal/nrf_gpio.h>
+
+#include "system.h"
 
 static struct nvs_fs fs;
 
@@ -22,8 +22,7 @@ static struct nvs_fs fs;
 
 LOG_MODULE_REGISTER(system, LOG_LEVEL_INF);
 
-#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios)  // Alternate button if available to use as
-											// "reset key"
+#if DT_NODE_HAS_PROP(DT_ALIAS(sw0), gpios) // Alternate button if available to use as "reset key"
 #define BUTTON_EXISTS true
 static void button_thread(void);
 K_THREAD_DEFINE(
@@ -172,10 +171,8 @@ static int sys_retained_init(void) {
 	bool reset_pin_reset = NRF_POWER->RESETREAS & 0x01;
 #endif
 	// on most nrf, reset by pin reset will clear retained
-	if (!reset_pin_reset) {  // if reset reason is not by pin reset, system
-							 // automatically trusts retained state
+	if (!reset_pin_reset) // if reset reason is not by pin reset, system automatically trusts retained state
 		ram_retention_valid = true;
-	}
 	bool ram_retention = retained_validate();  // Check ram retention
 	// All contents of NVS was stored in RAM to not need initializing NVS often
 	if (!ram_retention) {
@@ -251,13 +248,9 @@ void sys_write(uint16_t id, void* retained_ptr, const void* data, size_t len) {
 // return 0 if clock applied, -1 if failed (because there is no clk_en or clk_out)
 int set_sensor_clock(bool enable, float rate, float* actual_rate) {
 #if CLK_EN_EXISTS
-	gpio_pin_set_dt(
-		&clk_en,
-		enable
-	);  // if enabling some external oscillator is available
-	//	*actual_rate = enable ? (float)NSEC_PER_SEC / clk_out.period : 0; // assume pwm
-	//period is the same as an equivalent external oscillator
-	*actual_rate = enable ? 32768 : 0;  // default
+	gpio_pin_set_dt(&clk_en, enable); // if enabling some external oscillator is available
+//	*actual_rate = enable ? (float)NSEC_PER_SEC / clk_out.period : 0; // assume pwm period is the same as an equivalent external oscillator
+	*actual_rate = enable ? 32768 : 0; // default
 	return 0;
 #endif
 	*actual_rate = 0;  // rate is 0 if there will be no clock source available
@@ -380,8 +373,7 @@ void sys_user_shutdown(void) {
 	reboot_counter_write(0);
 	set_led(SYS_LED_PATTERN_ONESHOT_POWEROFF, SYS_LED_PRIORITY_BOOT);
 	k_msleep(1500);
-	if (button_read())  // If alternate button is available and still pressed, wait for
-						// the user to stop pressing the button
+	if (button_read()) // If alternate button is available and still pressed, wait for the user to stop pressing the button
 	{
 		set_led(SYS_LED_PATTERN_LONG, SYS_LED_PRIORITY_BOOT);
 		while (button_read()) {

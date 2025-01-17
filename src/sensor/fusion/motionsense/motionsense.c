@@ -20,10 +20,12 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "motionsense.h"
-
 #include "globals.h"
 #include "util.h"
+
+//#include
+
+#include "motionsense.h"
 
 LOG_MODULE_REGISTER(sensorfusion, LOG_LEVEL_INF);
 

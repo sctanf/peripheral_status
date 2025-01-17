@@ -23,9 +23,7 @@
 #ifndef SLIMENRF_SENSOR
 #define SLIMENRF_SENSOR
 
-#include <stdbool.h>
 #include <zephyr/drivers/i2c.h>
-#include <zephyr/types.h>
 
 const char* sensor_get_sensor_imu_name(void);
 const char* sensor_get_sensor_mag_name(void);
@@ -72,42 +70,10 @@ typedef struct sensor_fusion {
 } sensor_fusion_t;
 
 typedef struct sensor_imu {
-	int (*init)(const struct i2c_dt_spec*, float, float, float, float*, float*);  // first
-																				  // float
-																				  // is
-																				  // clock_rate,
-																				  // nonzero
-																				  // means
-																				  // use
-																				  // CLKIN,
-																				  // return
-																				  // update
-																				  // time,
-																				  // return
-																				  // 0
-																				  // if
-																				  // success,
-																				  // -1
-																				  // if
-																				  // general
-																				  // error
+	int (*init)(const struct i2c_dt_spec*, float, float, float, float*, float*); // first float is clock_rate, nonzero means use CLKIN, return update time, return 0 if success, -1 if general error
 	void (*shutdown)(const struct i2c_dt_spec*);
 
-	int (*update_odr)(const struct i2c_dt_spec*, float, float, float*, float*);  // return
-																				 // actual
-																				 // update
-																				 // time,
-																				 // return
-																				 // 0 if
-																				 // success,
-																				 // 1 if
-																				 // odr
-																				 // is
-																				 // same,
-																				 // -1
-																				 // if
-																				 // general
-																				 // error
+	int (*update_odr)(const struct i2c_dt_spec*, float, float, float*, float*); // return actual update time, return 0 if success, 1 if odr is same, -1 if general error
 
 	uint16_t (*fifo_read)(const struct i2c_dt_spec*, uint8_t*, uint16_t);
 	int (*fifo_process)(
@@ -121,42 +87,24 @@ typedef struct sensor_imu {
 
 	void (*setup_WOM)(const struct i2c_dt_spec*);
 
-	int (*ext_setup)(uint8_t, uint8_t);  // setup external magnetometer
-	int (*fifo_process_ext)(uint16_t, uint8_t*, float[3], float[3], uint8_t*);  // deg/s,
-																				// g,
-																				// raw
-																				// magnetometer
-																				// data
-	void (*ext_read)(const struct i2c_dt_spec*, uint8_t*);  // raw data, to be processed
-															// in magnetometer driver
-	int (*ext_passthrough)(
-		const struct i2c_dt_spec*,
-		bool
-	);  // enable/disable passthrough mode, return 0 if success, -1 if error or not
-		// available
+	int (*ext_setup)(uint8_t, uint8_t); // setup external magnetometer
+	int (*fifo_process_ext)(uint16_t, uint8_t*, float[3], float[3], uint8_t*); // deg/s, g, raw magnetometer data
+	void (*ext_read)(const struct i2c_dt_spec*, uint8_t*); // raw data, to be processed in magnetometer driver
+	int (*ext_passthrough)(const struct i2c_dt_spec*, bool); // enable/disable passthrough mode, return 0 if success, -1 if error or not available
 } sensor_imu_t;
 
 typedef struct sensor_mag {
-	int (*init)(const struct i2c_dt_spec*, float, float*);  // return update time,
-															// return 0 if success, 1 if
-															// general error
+	int (*init)(const struct i2c_dt_spec*, float, float*); // return update time, return 0 if success, 1 if general error
 	void (*shutdown)(const struct i2c_dt_spec*);
 
-	int (*update_odr)(const struct i2c_dt_spec*, float, float*);  // return actual
-																  // update time, return
-																  // 0 if success, 1 if
-																  // odr is same, -1 if
-																  // general error
+	int (*update_odr)(const struct i2c_dt_spec*, float, float*); // return actual update time, return 0 if success, 1 if odr is same, -1 if general error
 
-	void (*mag_oneshot)(const struct i2c_dt_spec*);  // trigger oneshot if exists
-	void (*mag_read)(const struct i2c_dt_spec*, float[3]);  // any unit (usually gauss)
-	float (*temp_read)(const struct i2c_dt_spec*, float[3]);  // deg C
+	void (*mag_oneshot)(const struct i2c_dt_spec*); // trigger oneshot if exists
+	void (*mag_read)(const struct i2c_dt_spec*, float[3]); // any unit (usually gauss)
+	float (*temp_read)(const struct i2c_dt_spec*, float[3]); // deg C
 
-	void (*mag_process)(
-		uint8_t*,
-		float[3]
-	);  // use if magnetometer is present as an auxiliary sensor, from data read by IMU
-	uint8_t ext_reg;  // register for auxiliary interface to read magnetometer data
+	void (*mag_process)(uint8_t*, float[3]); // use if magnetometer is present as an auxiliary sensor, from data read by IMU
+	uint8_t ext_reg; // register for auxiliary interface to read magnetometer data
 } sensor_mag_t;
 
 #endif

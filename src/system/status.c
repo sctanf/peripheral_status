@@ -1,9 +1,9 @@
-#include "status.h"
+#include "globals.h"
+#include "connection/connection.h"
 
 #include <zephyr/kernel.h>
 
-#include "connection/connection.h"
-#include "globals.h"
+#include "status.h"
 #include "led.h"
 
 static int status_state = 0;

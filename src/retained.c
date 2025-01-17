@@ -8,9 +8,10 @@
 
 #include <stdint.h>
 #include <string.h>
+
+#include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/retained_mem.h>
-#include <zephyr/kernel.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/crc.h>
 
