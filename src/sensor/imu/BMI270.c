@@ -237,6 +237,7 @@ int bmi_update_odr(
 	return 0;
 }
 
+// TODO: gyro rotation data is delayed for some reason, accelerometer still responds instantly
 uint16_t bmi_fifo_read(const struct i2c_dt_spec* dev_i2c, uint8_t* data, uint16_t len) {
 	int err = 0;
 	uint16_t total = 0;
