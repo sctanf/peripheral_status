@@ -173,7 +173,6 @@ static int sys_retained_init(void) {
 	// on most nrf, reset by pin reset will clear retained
 	if (!reset_pin_reset) // if reset reason is not by pin reset, system automatically trusts retained state
 		ram_retention_valid = true;
-	}
 	bool ram_retention = retained_validate();  // Check ram retention
 	// All contents of NVS was stored in RAM to not need initializing NVS often
 	if (!ram_retention) {

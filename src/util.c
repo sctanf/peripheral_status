@@ -26,6 +26,7 @@
 #include "util.h"
 
 void q_normalize(const float *q, float *out)
+{
 	float mag = sqrtf(q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]);
 	if (mag == 0) {
 		return;
