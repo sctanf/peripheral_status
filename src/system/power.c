@@ -192,7 +192,7 @@ static void power_thread(void)
 		// Separate detection of vin
 		if (!plugged && battery_mV > 4300 && !abnormal_reading)
 			plugged = true;
-		else if (plugged && battery_mV <= 4250 || abnormal_reading)
+		else if ((plugged && battery_mV <= 4250) || abnormal_reading)
 			plugged = false;
 
 		if (!power_init)
