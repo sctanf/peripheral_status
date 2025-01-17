@@ -20,17 +20,18 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "sensor.h"
+#include "globals.h"
+#include "system/system.h"
+#include "util.h"
+#include "connection/connection.h"
+#include "calibration.h"
 
 #include <math.h>
 
-#include "calibration.h"
-#include "connection/connection.h"
 #include "fusion/fusions.h"
-#include "globals.h"
 #include "sensors.h"
-#include "system/system.h"
-#include "util.h"
+
+#include "sensor.h"
 
 #if DT_NODE_EXISTS(DT_NODELABEL(imu))
 #define SENSOR_IMU_EXISTS true
@@ -156,16 +157,15 @@ int sensor_init(void) {
 		if (imu_id >= (int)ARRAY_SIZE(sensor_imus) || sensor_imus[imu_id] == NULL
 			|| sensor_imus[imu_id] == &sensor_imu_none) {
 			sensor_imu = &sensor_imu_none;
-			sensor_sensor_scanning = false;  // done
-			//			if (sensor_imu_dev.addr < 0xFF) // If for some reason there
-			//actually is a valid IMU but we found some unsupported device first
-			//			{
-			//				LOG_WRN("IMU not supported");
-			//				sensor_imu_dev.addr++;
-			//				sensor_imu_dev_reg = 0xFF;
-			//				sensor_scan_clear(); // clear the invalid data
-			//				return sensor_init(); // try again
-			//			}
+			sensor_sensor_scanning = false; // done
+//			if (sensor_imu_dev.addr < 0xFF) // If for some reason there actually is a valid IMU but we found some unsupported device first
+//			{
+//				LOG_WRN("IMU not supported");
+//				sensor_imu_dev.addr++;
+//				sensor_imu_dev_reg = 0xFF;
+//				sensor_scan_clear(); // clear the invalid data
+//				return sensor_init(); // try again
+//			}
 			LOG_ERR("IMU not supported");
 			set_status(SYS_STATUS_SENSOR_ERROR, true);
 			return -1;  // an IMU was detected but not supported
@@ -182,9 +182,9 @@ int sensor_init(void) {
 #if SENSOR_MAG_EXISTS
 	LOG_INF("Scanning bus for magnetometer");
 	int mag_id = sensor_scan_mag(&sensor_mag_dev, &sensor_mag_dev_reg);
-	if (mag_id < 0) {
-		// IMU must support passthrough mode if the magnetometer is connected through
-		// the IMU
+	if (mag_id < 0)
+	{
+		// IMU must support passthrough mode if the magnetometer is connected through the IMU
 		int err = sensor_imu->ext_passthrough(&sensor_imu_dev, true);
 		if (!err) {
 			LOG_INF("Scanning bus for magnetometer through IMU passthrough");
@@ -222,16 +222,14 @@ int sensor_init(void) {
 			|| sensor_mags[mag_id] == &sensor_mag_none) {
 			sensor_mag = &sensor_mag_none;
 			mag_available = false;
-			//			if (sensor_imu_dev.addr < 0xFF) // If for some reason there
-			//actually is a valid magnetometer but we found some unsupported device
-			//first
-			//			{
-			//				LOG_WRN("Magnetometer not supported");
-			//				sensor_mag_dev.addr++;
-			//				sensor_mag_dev_reg = 0xFF;
-			//				sensor_scan_clear(); // clear the invalid data
-			//				return sensor_init(); // try again
-			//			}
+//			if (sensor_imu_dev.addr < 0xFF) // If for some reason there actually is a valid magnetometer but we found some unsupported device first
+//			{
+//				LOG_WRN("Magnetometer not supported");
+//				sensor_mag_dev.addr++;
+//				sensor_mag_dev_reg = 0xFF;
+//				sensor_scan_clear(); // clear the invalid data
+//				return sensor_init(); // try again
+//			}
 			LOG_ERR("Magnetometer not supported");
 		} else {
 			sensor_mag = sensor_mags[mag_id];
@@ -476,19 +474,15 @@ int main_imu_init(void) {
 
 	// Setup fusion
 	sensor_retained_read();
-	if (retained.fusion_id == fusion_id)  // Check if the retained fusion data is valid
-										  // and matches the selected fusion
-	{  // Load state if the data is valid (fusion was initialized before)
+	if (retained.fusion_id == fusion_id) // Check if the retained fusion data is valid and matches the selected fusion
+	{ // Load state if the data is valid (fusion was initialized before)
 		sensor_fusion->load(retained.fusion_data);
 		retained.fusion_id = 0;  // Invalidate retained fusion data
 		retained_update();
-	} else {
-		sensor_fusion->init(
-			gyro_actual_time,
-			accel_initial_time,
-			accel_initial_time
-		);  // TODO: using initial time since accel and mag are not polled at the actual
-			// rate
+	}
+	else
+	{
+		sensor_fusion->init(gyro_actual_time, accel_initial_time, accel_initial_time); // TODO: using initial time since accel and mag are not polled at the actual rate
 	}
 
 	// Calibrate IMU
@@ -517,7 +511,7 @@ int main_imu_init(void) {
 }
 
 enum sensor_sensor_mode {
-	//	SENSOR_SENSOR_MODE_OFF,
+//	SENSOR_SENSOR_MODE_OFF,
 	SENSOR_SENSOR_MODE_LOW_NOISE,
 	SENSOR_SENSOR_MODE_LOW_POWER,
 	SENSOR_SENSOR_MODE_LOW_POWER_2
@@ -551,12 +545,10 @@ void main_imu_thread(void) {
 			bool reconfig = last_sensor_mode != sensor_mode;
 			last_sensor_mode = sensor_mode;
 
-			// Reading IMUs will take between 2.5ms (~7 samples, low noise) - 7ms (~33
-			// samples, low power) Magneto sample will take ~400us Fusing data will take
-			// between 100us (~7 samples, low noise) - 500us (~33 samples, low power)
-			// for xiofusion
-			// TODO: on any errors set main_ok false and skip (make functions return
-			// nonzero)
+			// Reading IMUs will take between 2.5ms (~7 samples, low noise) - 7ms (~33 samples, low power)
+			// Magneto sample will take ~400us
+			// Fusing data will take between 100us (~7 samples, low noise) - 500us (~33 samples, low power) for xiofusion
+			// TODO: on any errors set main_ok false and skip (make functions return nonzero)
 
 			// At high speed, use oneshot mode to have synced magnetometer data
 			// Call before FIFO and get the data after
@@ -675,11 +667,11 @@ void main_imu_thread(void) {
 
 				// Process fusion
 				sensor_fusion->update_gyro(g, gyro_actual_time);
-				//				sensor_fusion->update(g, a, m, gyro_actual_time);
+//				sensor_fusion->update(g, a, m, gyro_actual_time);
 
-				if (mag_available && mag_enabled) {
-					// Get fusion's corrected gyro data (or get gyro bias from fusion)
-					// and use it here
+				if (mag_available && mag_enabled)
+				{
+					// Get fusion's corrected gyro data (or get gyro bias from fusion) and use it here
 					float g_off[3] = {};
 					sensor_fusion->get_gyro_bias(g_off);
 					for (int i = 0; i < 3; i++) {
@@ -774,10 +766,8 @@ void main_imu_thread(void) {
 			if (mag_available && mag_enabled
 				&& sensor_mode == SENSOR_SENSOR_MODE_LOW_NOISE) {
 				float gyro_speed = sqrtf(max_gyro_speed_square);
-				float mag_target_time
-					= 1.0f / (4 * gyro_speed);  // target mag ODR for ~0.25 deg error
-				if (mag_target_time < 0.005f)  // cap at 0.005 (200hz), above this the
-											   // sensor will use oneshot mode instead
+				float mag_target_time = 1.0f / (4 * gyro_speed); // target mag ODR for ~0.25 deg error
+				if (mag_target_time < 0.005f) // cap at 0.005 (200hz), above this the sensor will use oneshot mode instead
 				{
 					mag_target_time = 0.005;
 					int err = sensor_mag->update_odr(
@@ -790,9 +780,7 @@ void main_imu_thread(void) {
 					}
 					mag_use_oneshot = true;
 				}
-				if (mag_target_time >= 0.005f
-					|| mag_actual_time != INFINITY)  // under 200Hz or magnetometer did
-													 // not have a oneshot mode
+				if (mag_target_time >= 0.005f || mag_actual_time != INFINITY) // under 200Hz or magnetometer did not have a oneshot mode
 				{
 					int err = sensor_mag->update_odr(
 						&sensor_mag_dev,
@@ -854,7 +842,7 @@ void main_imu_thread(void) {
 			}
 		}
 		main_running = false;
-		//		k_sleep(K_FOREVER);
+//		k_sleep(K_FOREVER);
 		int64_t time_delta = k_uptime_get() - time_begin;
 		//		led_clock_offset += time_delta;
 		if (time_delta > sensor_update_time_ms) {

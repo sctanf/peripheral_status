@@ -20,12 +20,11 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "sensor_ext.h"
-
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
 
 #include "sensor_none.h"
+#include "sensor_ext.h"
 
 static const sensor_imu_t* ext_imu = &sensor_imu_none;
 static const sensor_mag_t* ext_mag = &sensor_mag_none;

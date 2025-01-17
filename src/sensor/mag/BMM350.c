@@ -7,15 +7,15 @@ Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright
-	notice, this list of conditions and the following disclaimer.
+    notice, this list of conditions and the following disclaimer.
 
 2. Redistributions in binary form must reproduce the above copyright
-	notice, this list of conditions and the following disclaimer in the
-	documentation and/or other materials provided with the distribution.
+    notice, this list of conditions and the following disclaimer in the
+    documentation and/or other materials provided with the distribution.
 
 3. Neither the name of the copyright holder nor the names of its
-	contributors may be used to endorse or promote products derived from
-	this software without specific prior written permission.
+    contributors may be used to endorse or promote products derived from
+    this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -31,17 +31,16 @@ IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 POSSIBILITY OF SUCH DAMAGE.
 */
 
+#include <math.h>
+
+#include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
+
 #include "BMM350.h"
 
-#include <math.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/logging/log.h>
-
-// the datasheet says almost nothing about sensitivities, these are taken from
-// boschsensortec BMM350_SensorAPI Data registers for X,Y and Z magnetic channel and
-// temperature channel provide data in 24bit registers in 21bit signed-integer format
-// (21LSBs used) currently the data read is uncompensated, there are compensation values
-// in OTP which is not used at the moment
+// the datasheet says almost nothing about sensitivities, these are taken from boschsensortec BMM350_SensorAPI
+// Data registers for X,Y and Z magnetic channel and temperature channel provide data in 24bit registers in 21bit signed-integer format (21LSBs used)
+// currently the data read is uncompensated, there are compensation values in OTP which is not used at the moment
 #define bxy_sens 14.55f
 #define bz_sens 9.0f
 #define temp_sens 0.00204f
@@ -51,163 +50,175 @@ POSSIBILITY OF SUCH DAMAGE.
 #define lut_gain 0.714607238769531f
 #define power (float)(1000000.0 / 1048576.0)
 
-static const float sensitivity_xy
-	= (power / (bxy_sens * ina_xy_gain_trgt * adc_gain * lut_gain));  // uT/LSB
-static const float sensitivity_z
-	= (power / (bz_sens * ina_z_gain_trgt * adc_gain * lut_gain));
-static const float sensitivity_temp
-	= 1 / (temp_sens * adc_gain * lut_gain * 1048576);  // C/LSB
+static const float sensitivity_xy = (power / (bxy_sens * ina_xy_gain_trgt * adc_gain * lut_gain)); // uT/LSB
+static const float sensitivity_z = (power / (bz_sens * ina_z_gain_trgt * adc_gain * lut_gain));
+static const float sensitivity_temp = 1 / (temp_sens * adc_gain * lut_gain * 1048576); // C/LSB
 
 static uint8_t last_odr = 0xff;
 
 LOG_MODULE_REGISTER(BMM350, LOG_LEVEL_DBG);
 
-int bmm3_init(const struct i2c_dt_spec* dev_i2c, float time, float* actual_time) {
-	int err = i2c_reg_write_byte_dt(dev_i2c, BMM350_OTP_CMD_REG, 0x80);  // PWR_OFF_OTP
-	if (err) {
+int bmm3_init(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time)
+{
+	int err = i2c_reg_write_byte_dt(dev_i2c, BMM350_OTP_CMD_REG, 0x80); // PWR_OFF_OTP
+	if (err)
 		LOG_ERR("I2C error");
-	}
-	last_odr = 0xff;  // reset last odr
+	last_odr = 0xff; // reset last odr
 	err |= bmm3_update_odr(dev_i2c, time, actual_time);
 	return (err < 0 ? err : 0);
 }
 
-void bmm3_shutdown(const struct i2c_dt_spec* dev_i2c) {
-	last_odr = 0xff;  // reset last odr
+void bmm3_shutdown(const struct i2c_dt_spec *dev_i2c)
+{
+	last_odr = 0xff; // reset last odr
 	int err = i2c_reg_write_byte_dt(dev_i2c, BMM350_CMD, 0xB6);
-	if (err) {
+	if (err)
 		LOG_ERR("I2C error");
-	}
 }
 
-int bmm3_update_odr(const struct i2c_dt_spec* dev_i2c, float time, float* actual_time) {
+int bmm3_update_odr(const struct i2c_dt_spec *dev_i2c, float time, float *actual_time)
+{
 	int ODR;
 	uint8_t AGGR;
 	uint8_t AGGR_AVG;
 	uint8_t PMU_CMD;
 
-	if (time <= 0 || time == INFINITY)  // suspend and forced mode both use suspend mode
+	if (time <= 0 || time == INFINITY) // suspend and forced mode both use suspend mode
 	{
-		PMU_CMD = PMU_CMD_SUS;  // amogus
+		PMU_CMD = PMU_CMD_SUS; // amogus
 		ODR = 0;
-	} else {
+	}
+	else
+	{
 		PMU_CMD = PMU_CMD_NM;
 		ODR = 1 / time;
 	}
 
-	if (time <= 0) {
+	if (time <= 0)
+	{
 		AGGR = 0;
 		AGGR_AVG = AGGR_NO_AVG;
-		time = 0;  // off
-	} else if (ODR > 200)  // TODO: this sucks
+		time = 0; // off
+	}
+	else if (ODR > 200) // TODO: this sucks
 	{
 		AGGR = AGGR_ODR_400Hz;
 		AGGR_AVG = AGGR_NO_AVG;
 		time = 1.0 / 400;
-	} else if (ODR > 100) {
+	}
+	else if (ODR > 100)
+	{
 		AGGR = AGGR_ODR_200Hz;
 		AGGR_AVG = AGGR_AVG_2;
 		time = 1.0 / 200;
-	} else if (ODR > 50) {
+	}
+	else if (ODR > 50)
+	{
 		AGGR = AGGR_ODR_100Hz;
 		AGGR_AVG = AGGR_AVG_4;
 		time = 1.0 / 100;
-	} else if (ODR > 25) {
+	}
+	else if (ODR > 25)
+	{
 		AGGR = AGGR_ODR_50Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 50;
-	} else if (ODR > 12.5) {
+	}
+	else if (ODR > 12.5)
+	{
 		AGGR = AGGR_ODR_25Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 25;
-	} else if (ODR > 6.25) {
+	}
+	else if (ODR > 6.25)
+	{
 		AGGR = AGGR_ODR_12_5Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 12.5;
-	} else if (ODR > 3.125) {
+	}
+	else if (ODR > 3.125)
+	{
 		AGGR = AGGR_ODR_6_25Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 6.25;
-	} else if (ODR > 1.5625) {
+	}
+	else if (ODR > 1.5625)
+	{
 		AGGR = AGGR_ODR_3_125Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 3.125;
-	} else if (ODR > 0) {
+	}
+	else if (ODR > 0)
+	{
 		AGGR = AGGR_ODR_1_5625Hz;
 		AGGR_AVG = AGGR_AVG_8;
 		time = 1.0 / 1.5625;
-	} else {
+	}
+	else
+	{
 		AGGR = AGGR_ODR_200Hz;
 		AGGR_AVG = AGGR_NO_AVG;
 		time = INFINITY;
 	}
 
 	uint8_t AGGR_SET = AGGR_AVG << 4 | AGGR;
-	if (last_odr == AGGR_SET) {
+	if (last_odr == AGGR_SET)
 		return 1;
-	} else {
+	else
 		last_odr = AGGR_SET;
-	}
 
 	int err = i2c_reg_write_byte_dt(dev_i2c, BMM350_PMU_CMD_AGGR_SET, AGGR_SET);
 	err |= i2c_reg_write_byte_dt(dev_i2c, BMM350_PMU_CMD, PMU_CMD);
-	if (err) {
+	if (err)
 		LOG_ERR("I2C error");
-	}
 
 	*actual_time = time;
 	return err;
 }
 
-void bmm3_mag_oneshot(const struct i2c_dt_spec* dev_i2c) {
+void bmm3_mag_oneshot(const struct i2c_dt_spec *dev_i2c)
+{
 	int err = i2c_reg_write_byte_dt(dev_i2c, BMM350_PMU_CMD, PMU_CMD_FM_FAST);
-	if (err) {
+	if (err)
 		LOG_ERR("I2C error");
-	}
 }
 
-void bmm3_mag_read(const struct i2c_dt_spec* dev_i2c, float m[3]) {
+void bmm3_mag_read(const struct i2c_dt_spec *dev_i2c, float m[3])
+{
 	int err = 0;
 	uint8_t status;
-	while ((status & 0x01) == 0x01) {  // wait for forced mode to complete
+	while ((status & 0x01) == 0x01) // wait for forced mode to complete
 		err |= i2c_reg_read_byte_dt(dev_i2c, BMM350_PMU_CMD_STATUS_0, &status);
-	}
 	uint8_t rawData[9];
 	err |= i2c_burst_read_dt(dev_i2c, BMM350_MAG_X_XLSB, &rawData[0], 9);
-	if (err) {
+	if (err)
 		LOG_ERR("I2C error");
-	}
 	bmm3_mag_process(rawData, m);
 }
 
-float bmm3_temp_read(const struct i2c_dt_spec* dev_i2c, float bias[3]) {
+float bmm3_temp_read(const struct i2c_dt_spec *dev_i2c, float bias[3])
+{
 	uint8_t rawTemp[3];
 	int err = i2c_burst_read_dt(dev_i2c, BMM350_TEMP_XLSB, &rawTemp[0], 3);
-	if (err) {
+	if (err)
 		LOG_ERR("I2C error");
-	}
-	float temp = (int32_t)((((int32_t)rawTemp[2]) << 24) | (((int32_t)rawTemp[1]) << 16)
-						   | (((int32_t)rawTemp[0]) << 8))
-			   / 256;
+	float temp = (int32_t)((((int32_t)rawTemp[2]) << 24) | (((int32_t)rawTemp[1]) << 16) | (((int32_t)rawTemp[0]) << 8)) / 256;
 	temp *= sensitivity_temp;
 	// taken from boschsensortec BMM350_SensorAPI, why is this needed?
-	if (temp > 0) {
+	if (temp > 0)
 		temp -= 25.49f;
-	} else if (temp < 0) {
+	else if (temp < 0)
 		temp += 25.49f;
-	}
 	return temp;
 }
 
-void bmm3_mag_process(uint8_t* raw_m, float m[3]) {
-	for (int i = 0; i < 3; i++)  // x, y, z
+void bmm3_mag_process(uint8_t *raw_m, float m[3])
+{
+	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		m[i] = (int32_t)((((int32_t)raw_m[(i * 3) + 2]) << 24)
-						 | (((int32_t)raw_m[(i * 3) + 1]) << 16)
-						 | (((int32_t)raw_m[i * 3]) << 8))
-			 / 256;
+		m[i] = (int32_t)((((int32_t)raw_m[(i * 3) + 2]) << 24) | (((int32_t)raw_m[(i * 3) + 1]) << 16) | (((int32_t)raw_m[i * 3]) << 8)) / 256;
 		m[i] *= i < 2 ? sensitivity_xy : sensitivity_z;
-		m[i] /= 100;  // uT to gauss
+		m[i] /= 100; // uT to gauss
 	}
 }
 
@@ -224,5 +235,5 @@ const sensor_mag_t sensor_mag_bmm350 = {
 	*bmm3_temp_read,
 
 	*bmm3_mag_process,
-	0xff  // External interface only reads 6 bytes, this is insufficient
+	0xff // External interface only reads 6 bytes, this is insufficient
 };

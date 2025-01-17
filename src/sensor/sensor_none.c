@@ -20,10 +20,10 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "sensor_none.h"
-
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/i2c.h>
+
+#include "sensor_none.h"
 
 LOG_MODULE_REGISTER(sensor_none, LOG_LEVEL_INF);
 

@@ -1,12 +1,12 @@
-#include "led.h"
+#include "globals.h"
+#include "util.h"
 
 #include <math.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/kernel.h>
 
-#include "globals.h"
-#include "util.h"
+#include "led.h"
 
 LOG_MODULE_REGISTER(led, LOG_LEVEL_INF);
 

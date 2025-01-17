@@ -20,15 +20,15 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include "xiofusion.h"
-
-#include "Fusion.h"
 #include "globals.h"
 #include "util.h"
+
+#include "Fusion.h"
 #include "xioFusionOffset2.h"
 
-static FusionOffset offset;  // could share goff and q with fusionoffset and fusionahrs
-							 // but init clears the values
+#include "xiofusion.h"
+
+static FusionOffset offset; // could share goff and q with fusionoffset and fusionahrs but init clears the values
 static FusionAhrs ahrs;
 
 static FusionVector gyro_sanity_m;
@@ -41,13 +41,12 @@ void fusion_init(float g_time, float a_time, float m_time) {
 	FusionOffsetInitialise2(&offset, rate);
 	FusionAhrsInitialise(&ahrs);
 	const FusionAhrsSettings settings = {
-		.convention = FusionConventionNwu,
-		.gain = 0.5f,
-		.gyroscopeRange = 2000.0f,  // also change gyro range in fusion! (.. does it
-									// actually work if its set to the limit?)
-		.accelerationRejection = 10.0f,
-		.magneticRejection = 20.0f,
-		.recoveryTriggerPeriod = 5 * rate,  // 5 seconds
+			.convention = FusionConventionNwu,
+			.gain = 0.5f,
+			.gyroscopeRange = 2000.0f, // also change gyro range in fusion! (.. does it actually work if its set to the limit?)
+			.accelerationRejection = 10.0f,
+			.magneticRejection = 20.0f,
+			.recoveryTriggerPeriod = 5 * rate, // 5 seconds
 	};
 	FusionAhrsSetSettings(&ahrs, &settings);
 }
@@ -145,8 +144,7 @@ void fusion_update_gyro_sanity(float* g, float* m) {
 		if (gyro_sanity == 2 && v_epsilon(gyro_sanity_m.array, m, 0.01f)) {
 			// For whatever reason the gyro seems unreliable
 			// Reset the offset here so the tracker can probably at least turn off
-			// TODO: the gyroscope might output garbage, the data should be ignored
-			// entirely
+			// TODO: the gyroscope might output garbage, the data should be ignored entirely
 			LOG_WRN("Gyroscope may be unreliable");
 			fusion_set_gyro_bias(g);
 			gyro_sanity = 3;

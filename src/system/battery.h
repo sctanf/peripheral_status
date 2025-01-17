@@ -7,9 +7,6 @@
 #ifndef APPLICATION_BATTERY_H_
 #define APPLICATION_BATTERY_H_
 
-#include <stdbool.h>
-#include <zephyr/types.h>
-
 /** Enable or disable measurement of the battery voltage.
  *
  * @param enable true to enable, false to disable

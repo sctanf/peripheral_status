@@ -23,9 +23,6 @@
 #ifndef SLIMENRF_CONNECTION
 #define SLIMENRF_CONNECTION
 
-#include <stdbool.h>
-#include <zephyr/types.h>
-
 uint8_t connection_get_id(void);
 void connection_set_id(uint8_t id);
 

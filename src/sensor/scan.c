@@ -20,17 +20,16 @@
 	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 	THE SOFTWARE.
 */
-#include <zephyr/drivers/i2c.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/types.h>
+#include <zephyr/drivers/i2c.h>
 
 #define SCAN_ADDR_START 8
 #define SCAN_ADDR_STOP 119
 
 LOG_MODULE_REGISTER(sensor_scan, LOG_LEVEL_INF);
 
-// Any address out of range (00, 7f, etc.) will search all addresses, otherwise it will
-// check provided address and register first
+// Any address out of range (00, 7f, etc.) will search all addresses, otherwise it will check provided address and register first
 
 int sensor_scan(
 	struct i2c_dt_spec* i2c_dev,
@@ -43,7 +42,7 @@ int sensor_scan(
 ) {
 	if (i2c_dev->addr > 0x7F)  // ignoring device
 	{
-		//		i2c_dev->addr = 0xFF; // no device found, mark as ignored
+//		i2c_dev->addr = 0xFF; // no device found, mark as ignored
 		return -1;
 	}
 
@@ -65,12 +64,9 @@ int sensor_scan(
 		id_index++;
 		for (int j = 0; j < addr_count; j++) {
 			addr = dev_addr[addr_index + j];
-			//			if (i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <=
-			//SCAN_ADDR_STOP && addr < i2c_dev->addr)
-			if (i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP
-				&& addr != i2c_dev->addr) {
-				continue;  // if an address was provided try to scan it first
-			}
+//			if (i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP && addr < i2c_dev->addr)
+			if (i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP && addr != i2c_dev->addr)
+				continue; // if an address was provided try to scan it first
 			LOG_DBG("Scanning address: 0x%02X", addr);
 			int id_cnt = id_count;
 			int id_ind = id_index;
@@ -133,9 +129,7 @@ int sensor_scan(
 		}
 	}
 
-	if ((i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP)
-		|| *i2c_dev_reg != 0xFF)  // preferred address or register failed, try again
-								  // with full scan
+	if ((i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP) || *i2c_dev_reg != 0xFF) // preferred address or register failed, try again with full scan
 	{
 		LOG_WRN("No device found at address: 0x%02X", i2c_dev->addr);
 		i2c_dev->addr = 0;

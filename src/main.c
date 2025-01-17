@@ -22,11 +22,11 @@
 */
 #include "globals.h"
 #include "system/system.h"
-// #include "timer.h"
-#include <zephyr/sys/reboot.h>
-
+//#include "timer.h"
 #include "connection/esb.h"
 #include "sensor/sensor.h"
+
+#include <zephyr/sys/reboot.h>
 
 #define DFU_DBL_RESET_MEM 0x20007F7C
 #define DFU_DBL_RESET_APP 0x4ee5677e
@@ -55,19 +55,16 @@ int main(void) {
 #endif
 #endif
 
-	//	start_time = k_uptime_get(); // Need to get start time for imu startup delay
-	set_led(SYS_LED_PATTERN_ON, SYS_LED_PRIORITY_BOOT);  // Boot LED
+//	start_time = k_uptime_get(); // Need to get start time for imu startup delay
+	set_led(SYS_LED_PATTERN_ON, SYS_LED_PRIORITY_BOOT); // Boot LED
 
-#if ADAFRUIT_BOOTLOADER \
-	&& !(IGNORE_RESET && BUTTON_EXISTS)  // Using Adafruit bootloader
-	(*dbl_reset_mem) = DFU_DBL_RESET_APP;  // Skip DFU
+#if ADAFRUIT_BOOTLOADER && !(IGNORE_RESET && BUTTON_EXISTS) // Using Adafruit bootloader
+	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
 //	ram_range_retain(dbl_reset_mem, sizeof(dbl_reset_mem), true);
 #endif
 
 	uint8_t reboot_counter = reboot_counter_read();
-	bool booting_from_shutdown = !reboot_counter
-							  && (reset_pin_reset || button_read()
-							  );  // 0 means from user shutdown or failed ram validation
+	bool booting_from_shutdown = !reboot_counter && (reset_pin_reset || button_read()); // 0 means from user shutdown or failed ram validation
 
 	if (booting_from_shutdown) {
 		set_led(SYS_LED_PATTERN_ONESHOT_POWERON, SYS_LED_PRIORITY_BOOT);
@@ -92,11 +89,8 @@ int main(void) {
 		k_msleep(1000);  // Wait before clearing counter and continuing
 	}
 	reboot_counter_write(100);
-	if (!reset_pin_reset && !button_read()
-		&& reset_mode == 0) {  // Only need to check once, if the button is pressed
-							   // again an interrupt is triggered from before
-		reset_mode = -1;  // Cancel reset_mode (shutdown)
-	}
+	if (!reset_pin_reset && !button_read() && reset_mode == 0) // Only need to check once, if the button is pressed again an interrupt is triggered from before
+		reset_mode = -1; // Cancel reset_mode (shutdown)
 
 #if USER_SHUTDOWN_ENABLED
 	bool charging = chg_read();
@@ -123,8 +117,8 @@ int main(void) {
 	esb_pair();
 
 	esb_initialize(true);
-	// timer_init();
-	// 1ms to start ESB
+	//timer_init();
+// 1ms to start ESB
 
 	return 0;
 }

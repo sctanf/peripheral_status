@@ -1,9 +1,6 @@
 #ifndef SLIMENRF_SYSTEM
 #define SLIMENRF_SYSTEM
 
-#include <stdbool.h>
-#include <zephyr/types.h>
-//
 #include "led.h"
 #include "power.h"
 #include "status.h"
