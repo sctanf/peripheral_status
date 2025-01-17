@@ -203,7 +203,12 @@ static void power_thread(void) {
 			= battery_mV > 1500
 		   && !abnormal_reading;  // Keep working without the battery connected,
 								  // otherwise it is obviously too dead to boot system
-		plugged = battery_mV > 4300 && !abnormal_reading;  // Separate detection of vin
+		// Separate detection of vin
+		if (!plugged && battery_mV > 4300 && !abnormal_reading) {
+			plugged = true;
+		} else if (plugged && battery_mV <= 4250 || abnormal_reading) {
+			plugged = false;
+		}
 
 		if (!power_init) {
 			// log battery state once
