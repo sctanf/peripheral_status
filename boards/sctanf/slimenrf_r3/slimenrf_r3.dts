@@ -24,8 +24,6 @@
 	pwm0_default: pwm0_default {
 		group1 {
 			psels = <NRF_PSEL(PWM_OUT0, 0, 7)>;
-			nordic,drive-mode = <NRF_DRIVE_D0S1>;
-			nordic,invert;
 		};
 	};
 
@@ -45,6 +43,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
 		zephyr,console = &cdc_acm_uart0;
 		zephyr,shell-uart = &cdc_acm_uart0;
 	};
@@ -89,6 +88,35 @@
 		ldo-gpios = <&gpio0 30 GPIO_PUSH_PULL>;
 	};
 
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x0 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0xc000 0x72000>;
+		};
+		slot1_partition: partition@7e000 {
+			label = "image-1";
+			reg = <0x7e000 0x72000>;
+		};
+		scratch_partition: partition@f0000 {
+			label = "image-scratch";
+			reg = <0xf0000 0xa000>;
+		};
+		storage_partition: partition@fa000 {
+			label = "storage";
+			reg = <0xfa000 0x6000>;
+		};
+	};
 };
 
 &reg1 {
