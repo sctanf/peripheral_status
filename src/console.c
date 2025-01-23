@@ -170,6 +170,19 @@ static void print_meow(void)
 
 static void console_thread(void)
 {
+#if DFU_EXISTS
+	if (button_read()) // button held on usb connect, enter DFU
+	{
+#if ADAFRUIT_BOOTLOADER
+		NRF_POWER->GPREGRET = 0x57;
+		sys_request_system_reboot();
+#endif
+#if NRF5_BOOTLOADER
+		gpio_pin_configure(gpio_dev, 19, GPIO_OUTPUT | GPIO_OUTPUT_INIT_LOW);
+#endif
+	}
+#endif
+
 	console_getline_init();
 	while (log_data_pending())
 		k_usleep(1);
