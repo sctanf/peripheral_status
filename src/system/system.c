@@ -123,7 +123,15 @@ static inline void sys_nvs_init(void)
 	}
 	fs.sector_size = info.size; // sector_size equal to the pagesize
 	fs.sector_count = 4U; // 4 sectors
-	if (nvs_mount(&fs))
+	int err = nvs_mount(&fs);
+	if (err == -EDEADLK)
+	{
+		LOG_WRN("All sectors closed, erasing all sectors...");
+		err = flash_flatten(fs.flash_device, fs.offset, fs.sector_size * fs.sector_count);
+		if (!err)
+			err = nvs_mount(&fs);
+	}
+	if (err)
 	{
 		LOG_ERR("Failed to mount NVS");
 		return;
