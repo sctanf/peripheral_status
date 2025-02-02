@@ -601,10 +601,10 @@ void main_imu_thread(void) {
 				&& sensor_mode == SENSOR_SENSOR_MODE_LOW_NOISE) {
 				float m[3];
 				sensor_mag->mag_read(&sensor_mag_dev, m);
-				float* magBias = sensor_calibration_get_magBias();
-				for (int i = 0; i < 3; i++) {
-					m[i] -= magBias[i];
-				}
+//				float* magBias = sensor_calibration_get_magBias();
+//				for (int i = 0; i < 3; i++) {
+//					m[i] -= magBias[i];
+//				}
 				sensor_sample_mag(a, m);  // 400us
 				apply_BAinv(m, sensor_calibration_get_magBAinv());
 				mx = m[0];
