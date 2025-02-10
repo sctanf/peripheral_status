@@ -1,0 +1,5 @@
+bootloader:
+  address: 0xe0000
+  end_address: 0x100000
+  region: flash_primary
+  size: 0x20000
