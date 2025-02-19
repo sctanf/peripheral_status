@@ -395,6 +395,10 @@ int main_imu_init(void)
 	{
 		k_msleep(5);
 		LOG_INF("Retrying sensor detection");
+
+		// Reset address before retrying sensor detection
+		sensor_imu_dev.addr = 0x00;
+
 		err = sensor_init(); // on POR, the sensor may not be ready yet
 		if (err)
 			return err;

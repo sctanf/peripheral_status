@@ -63,6 +63,11 @@ int sensor_scan(struct i2c_dt_spec *i2c_dev, uint8_t *i2c_dev_reg, int dev_addr_
 			if (i2c_dev->addr >= SCAN_ADDR_START && i2c_dev->addr <= SCAN_ADDR_STOP && addr != i2c_dev->addr)
 				continue; // if an address was provided try to scan it first
 			LOG_DBG("Scanning address: 0x%02X", addr);
+
+			// The first read on ICM45686 (potentially others?) always fails, so perform a dummy read on each address first 
+			uint8_t dummy;
+			i2c_reg_read_byte(dev, addr, 0x00, &dummy);
+
 			int id_cnt = id_count;
 			int id_ind = id_index;
 			int fnd_id = found_id;
