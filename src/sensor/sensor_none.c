@@ -61,7 +61,8 @@ imu_none_fifo_read(const struct i2c_dt_spec* dev_i2c, uint8_t* data, uint16_t le
 	return 0;
 }
 
-int imu_none_fifo_process(uint16_t index, uint8_t* data, float g[3]) {
+int imu_none_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
+{
 	LOG_DBG("imu_none_fifo_process, sensor has no IMU or IMU has no FIFO");
 	return -1;
 }
@@ -92,13 +93,8 @@ int imu_none_ext_setup(uint8_t ext_addr, uint8_t ext_reg) {
 	return -1;
 }
 
-int imu_none_fifo_process_ext(
-	uint16_t index,
-	uint8_t* data,
-	float g[3],
-	float a[3],
-	uint8_t* raw_m
-) {
+int imu_none_fifo_process_ext(uint16_t index, uint8_t *data, float a[3], float g[3], uint8_t *raw_m)
+{
 	LOG_DBG("imu_none_fifo_process_ext, sensor has no IMU or IMU has no ext FIFO");
 	return -1;
 }

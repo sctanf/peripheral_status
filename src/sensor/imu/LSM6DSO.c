@@ -6,6 +6,8 @@
 #include "LSM6DSO.h"
 #include "LSM6DSV.h" // Common functions
 
+#define PACKET_SIZE 7
+
 static uint8_t last_accel_mode = 0xff;
 static uint8_t last_gyro_mode = 0xff;
 static uint8_t last_accel_odr = 0xff;
@@ -215,7 +217,7 @@ int lsm6dso_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, floa
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSO_CTRL7, OP_MODE_G); // set gyroscope perf mode
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSO_CTRL4, GYRO_SLEEP); // set gyroscope awake/sleep mode
 
-	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSO_FIFO_CTRL3, (use_ext_fifo ? ODR_XL : 0x00) >> 4 | ODR_G); // set accel Not batched, set gyro batch rate
+	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSO_FIFO_CTRL3, (ODR_XL >> 4) | ODR_G); // set accel and gyro batch rate
 	if (err)
 		LOG_ERR("I2C error");
 
@@ -230,20 +232,20 @@ uint16_t lsm6dso_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uin
 	int err = 0;
 	uint16_t total = 0;
 	uint16_t count = UINT16_MAX;
-	while (count > 0 && len >= 7)
+	while (count > 0 && len >= PACKET_SIZE)
 	{
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_STATUS1, &rawCount[0], 2);
 		count = (uint16_t)((rawCount[1] & 3) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-		uint16_t limit = len / 7;
+		uint16_t limit = len / PACKET_SIZE;
 		if (count > limit)
 			count = limit;
 		for (int i = 0; i < count; i++)
-			err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_DATA_OUT_TAG, &data[i * 7], 7); // Packet size is always 7 bytes
+			err |= i2c_burst_read_dt(dev_i2c, LSM6DSO_FIFO_DATA_OUT_TAG, &data[i * PACKET_SIZE], PACKET_SIZE);
 		if (err)
 			LOG_ERR("I2C error");
-		data += count * 7;
-		len -= count * 7;
+		data += count * PACKET_SIZE;
+		len -= count * PACKET_SIZE;
 		total += count;
 	}
 	return total;

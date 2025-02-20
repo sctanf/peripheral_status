@@ -16,8 +16,13 @@
 #include "ICM42688.h"
 #include "sensor/sensor_none.h"
 
+#define PACKET_SIZE 20
+
 static const float accel_sensitivity = 16.0f / 32768.0f; // Always 16G
 static const float gyro_sensitivity = 2000.0f / 32768.0f; // Always 2000dps
+
+static const float accel_sensitivity_32 = 16.0f / ((uint32_t)2<<30); // 16G forced
+static const float gyro_sensitivity_32 = 2000.0f / ((uint32_t)2<<30); // 2000dps forced
 
 static uint8_t last_accel_odr = 0xff;
 static uint8_t last_gyro_odr = 0xff;
@@ -28,6 +33,7 @@ LOG_MODULE_REGISTER(ICM42688, LOG_LEVEL_DBG);
 
 int icm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
+	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	int err = 0;
 //	i2c_reg_write_byte_dt(dev_i2c, ICM42688_INT_SOURCE0, 0x00); // disable default interrupt (RESET_DONE)
 	if (clock_rate > 0)
@@ -46,11 +52,7 @@ int icm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_ti
 //	i2c_reg_write_byte_dt(dev_i2c, ICM42688_GYRO_ACCEL_CONFIG0, 0x44); // set gyro and accel bandwidth to ODR/10
 //	k_msleep(50); // 10ms Accel, 30ms Gyro startup
 	k_msleep(1); // fuck i dont wanna wait that long
-//	i2c_reg_write_byte_dt(dev_i2c, ICM42688_FIFO_CONFIG, 0x00); // FIFO bypass mode
-//	i2c_reg_write_byte_dt(dev_i2c, ICM42688_FSYNC_CONFIG, 0x00); // disable FSYNC
-//	i2c_reg_update_byte_dt(dev_i2c, ICM42688_TMST_CONFIG, 0x02, 0x00); // disable FSYNC
-//	i2c_reg_write_byte_dt(dev_i2c, ICM42688_TMST_CONFIG, (0x23 | 0x02) ^ 0x02); // disable FSYNC
-	err |= i2c_reg_write_byte_dt(dev_i2c, ICM42688_FIFO_CONFIG1, 0x02); // enable FIFO gyro only
+	err |= i2c_reg_write_byte_dt(dev_i2c, ICM42688_FIFO_CONFIG1, 0x10); // enable FIFO hires, a+g
 	err |= i2c_reg_write_byte_dt(dev_i2c, ICM42688_FIFO_CONFIG, 1<<6); // begin FIFO stream
 	if (err)
 		LOG_ERR("I2C error");
@@ -270,53 +272,57 @@ uint16_t icm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_
 	int err = 0;
 	uint16_t total = 0;
 	uint16_t packets = UINT16_MAX;
-	while (packets > 0 && len >= 8)
+	while (packets > 0 && len >= PACKET_SIZE)
 	{
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, ICM42688_FIFO_COUNTH, &rawCount[0], 2);
 		uint16_t count = (uint16_t)(rawCount[0] << 8 | rawCount[1]); // Turn the 16 bits into a unsigned 16-bit value
-		packets = count	/ 8; // FIFO packet size is 8 bytes for Packet 2
-		uint16_t limit = len / 8;
+		packets = count	/ PACKET_SIZE;
+		uint16_t limit = len / PACKET_SIZE;
 		if (packets > limit)
 		{
 			packets = limit;
-			count = packets * 8;
+			count = packets * PACKET_SIZE;
 		}
 		uint16_t offset = 0;
 		uint8_t addr = ICM42688_FIFO_DATA;
 		err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
 		while (count > 0)
 		{
-			err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
-			offset += 248;
-			count = count > 248 ? count - 248 : 0;
+			err |= i2c_read_dt(dev_i2c, &data[offset], count > 240 ? 240 : count); // Read less than 255 at a time (for nRF52832)
+			offset += 240;
+			count = count > 240 ? count - 240 : 0;
 		}
 		if (err)
 			LOG_ERR("I2C error");
-		data += packets * 8;
-		len -= packets * 8;
+		data += packets * PACKET_SIZE;
+		len -= packets * PACKET_SIZE;
 		total += packets;
 	}
 	return total;
 }
 
-int icm_fifo_process(uint16_t index, uint8_t *data, float g[3])
+int icm_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
-	index *= 8; // Packet size 8 bytes
+	index *= PACKET_SIZE;
 	if ((data[index] & 0x80) == 0x80)
 		return 1; // Skip empty packets
-	// combine into 16 bit values
-	float raw[3];
-	for (int i = 0; i < 3; i++) // x, y, z
-		raw[i] = (int16_t)((((uint16_t)data[index + (i * 2) + 1]) << 8) | data[index + (i * 2) + 2]);
-	// data[index + 7] is temperature
-	// but it is lower precision (also it is disabled)
-	// Temperature in Degrees Centigrade = (FIFO_TEMP_DATA / 2.07) + 25
-	if (raw[0] < -32766 || raw[1] < -32766 || raw[2] < -32766)
+	// combine into 20 bit values in 32 bit int
+	float a_raw[3];
+	float g_raw[3];
+	for (int i = 0; i < 3; i++) // accel x, y, z
+		a_raw[i] = (int32_t)((((uint32_t)data[index + 1 + (i * 2)]) << 24) | (((uint32_t)data[index + 2 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
+	for (int i = 0; i < 3; i++) // gyro x, y, z
+		g_raw[i] = (int32_t)((((uint32_t)data[index + 7 + (i * 2)]) << 24) | (((uint32_t)data[index + 8 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
+	if (g_raw[0] < (-32766 << 16) || g_raw[1] < (-32766 << 16) || g_raw[2] < (-32766 << 16)) // TODO: check if correct
 		return 1; // Skip invalid data
 	for (int i = 0; i < 3; i++) // x, y, z
-		raw[i] *= gyro_sensitivity;
-	memcpy(g, raw, sizeof(raw));
+	{
+		a_raw[i] *= accel_sensitivity_32;
+		g_raw[i] *= gyro_sensitivity_32;
+	}
+	memcpy(a, a_raw, sizeof(a_raw));
+	memcpy(g, g_raw, sizeof(g_raw));
 	return 0;
 }
 
