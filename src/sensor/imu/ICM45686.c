@@ -6,8 +6,13 @@
 #include "ICM45686.h"
 #include "sensor/sensor_none.h"
 
+#define PACKET_SIZE 20
+
 static const float accel_sensitivity = 16.0f / 32768.0f; // Always 16G
 static const float gyro_sensitivity = 2000.0f / 32768.0f; // Always 2000dps
+
+static const float accel_sensitivity_32 = 32.0f / ((uint32_t)2<<30); // 32G forced
+static const float gyro_sensitivity_32 = 4000.0f / ((uint32_t)2<<30); // 4000dps forced
 
 static uint8_t last_accel_odr = 0xff;
 static uint8_t last_gyro_odr = 0xff;
@@ -20,6 +25,7 @@ LOG_MODULE_REGISTER(ICM45686, LOG_LEVEL_DBG);
 
 int icm45_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
+	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	// special handling of unknown fifo corruption
 	fifo_primed = false;
 
@@ -37,7 +43,7 @@ int icm45_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_
 //	k_msleep(50); // 10ms Accel, 30ms Gyro startup
 	k_msleep(1); // fuck i dont wanna wait that long
 	err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x40 | 0b000111); // set FIFO Stream mode, set FIFO depth to 2K bytes
-	err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x05); // begin FIFO stream (FIFO gyro only)
+	err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x0F); // begin FIFO stream, hires, a+g
 	if (err)
 		LOG_ERR("I2C error");
 	return (err < 0 ? err : 0);
@@ -231,7 +237,7 @@ int icm45_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float 
 	return 0;
 }
 
-static const uint8_t empty[8] = {[0 ... 7] = 0x7f};
+static const uint8_t empty[PACKET_SIZE] = {[0 ... 7] = 0x7f};
 
 uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len) // TODO: check if working
 {
@@ -239,42 +245,29 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	uint16_t total = 0;
 	uint16_t packets = UINT16_MAX;
 	uint16_t empty_packets = 0;
-	while (packets > 0 && len >= 8)
+	while (packets > 0 && len >= PACKET_SIZE)
 	{
-		memset(data, 0x7F, 8); // Empty packet is 7F filled
+		memset(data, 0x7F, PACKET_SIZE); // Empty packet is 7F filled
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_COUNT_0, &rawCount[0], 2);
 		packets = (uint16_t)(rawCount[1] << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-//		uint16_t count = packets * 8; // FIFO packet size is 8 bytes for Gyro-only
-		uint16_t limit = len / 8;
+		uint16_t limit = len / PACKET_SIZE;
 		if (packets > limit)
-//		{
 			packets = limit;
-//			count = packets * 8;
-//		}
-//		uint16_t offset = 0;
-//		uint8_t addr = ICM45686_FIFO_DATA;
-//		err |= i2c_write_dt(dev_i2c, &addr, 1); // Start read buffer
-//		while (count > 0)
-//		{
-//			err |= i2c_read_dt(dev_i2c, &data[offset], count > 248 ? 248 : count); // Read less than 255 at a time (for nRF52832)
-//			offset += 248;
-//			count = count > 248 ? count - 248 : 0;
-//		}
 		// specially handle packet error from unknown fifo corruption
 		// TODO: this will discard some data in fifo, however the data is actually recoverable.
 		for (int i = 0; i < packets; i++)
 		{
-			err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_DATA, &data[i * 8], 8); // must check each packet as its coming in
-			// header should initially be 0x00, and 0x20 once gyro data is being written correctly
-			if (!fifo_primed && data[i * 8] == 0x20) // wait for first valid packet
+			err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_DATA, &data[i * PACKET_SIZE], PACKET_SIZE); // must check each packet as its coming in
+			// header should initially be 0x00, and 0x78 once data is being written correctly
+			if (!fifo_primed && data[i * PACKET_SIZE] == 0x78) // wait for first valid packet
 			{
 				LOG_INF("FIFO ready");
 				fifo_primed = true;
 			}
-			else if (data[i * 8] != 0x20 && fifo_primed) // immediately reset fifo on invalid packet
+			else if (data[i * PACKET_SIZE] != 0x78 && fifo_primed) // immediately reset fifo on invalid packet
 			{
-				if (!memcmp(&data[i * 8], empty, 8)) // skip if read empty packet
+				if (!memcmp(&data[i * PACKET_SIZE], empty, PACKET_SIZE)) // skip if read empty packet
 				{
 					empty_packets++;
 					continue;
@@ -284,16 +277,14 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 				fifo_primed = false;
 				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x00); // stop FIFO
 				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x00); // reset FIFO config
-//				k_busy_wait(250);
 				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x40 | 0b000111); // set FIFO Stream mode, set FIFO depth to 2K bytes
-				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x05); // begin FIFO stream (FIFO gyro only)
-//				k_busy_wait(250);
+				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x0F); // begin FIFO stream, hires, a+g
 			}
 		}
 		if (err)
 			LOG_ERR("I2C error");
-		data += packets * 8;
-		len -= packets * 8;
+		data += packets * PACKET_SIZE;
+		len -= packets * PACKET_SIZE;
 		total += packets;
 	}
 	if (empty_packets)
@@ -301,24 +292,28 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	return total;
 }
 
-int icm45_fifo_process(uint16_t index, uint8_t *data, float g[3])
+int icm45_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
-	index *= 8; // Packet size 8 bytes
-	if (data[index] != 0x20) // GYRO_EN
+	index *= PACKET_SIZE;
+	if (data[index] != 0x78) // ACCEL_EN, GYRO_EN, HIRES_EN, TMST_FIELD_EN
 		return 1; // Skip invalid header
 	// Empty packet is 7F filled
-	// combine into 16 bit values
-	float raw[3];
-	for (int i = 0; i < 3; i++) // x, y, z
-		raw[i] = (int16_t)((((uint16_t)data[index + (i * 2) + 2]) << 8) | data[index + (i * 2) + 1]);
-	// data[index + 7] is temperature
-	// but it is lower precision (also it is disabled)
-	// Temperature in Degrees Centigrade = (FIFO_TEMP_DATA / 2) + 25
-	if (raw[0] < -32766 || raw[1] < -32766 || raw[2] < -32766)
+	// combine into 20 bit values in 32 bit int
+	float a_raw[3];
+	float g_raw[3];
+	for (int i = 0; i < 3; i++) // accel x, y, z
+		a_raw[i] = (int32_t)((((uint32_t)data[index + 2 + (i * 2)]) << 24) | (((uint32_t)data[index + 1 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
+	for (int i = 0; i < 3; i++) // gyro x, y, z
+		g_raw[i] = (int32_t)((((uint32_t)data[index + 8 + (i * 2)]) << 24) | (((uint32_t)data[index + 7 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
+	if (g_raw[0] < (-32766 << 16) || g_raw[1] < (-32766 << 16) || g_raw[2] < (-32766 << 16)) // TODO: check if correct
 		return 1; // Skip invalid data
 	for (int i = 0; i < 3; i++) // x, y, z
-		raw[i] *= gyro_sensitivity;
-	memcpy(g, raw, sizeof(raw));
+	{
+		a_raw[i] *= accel_sensitivity_32;
+		g_raw[i] *= gyro_sensitivity_32;
+	}
+	memcpy(a, a_raw, sizeof(a_raw));
+	memcpy(g, g_raw, sizeof(g_raw));
 	return 0;
 }
 

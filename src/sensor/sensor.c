@@ -415,7 +415,7 @@ int main_imu_init(void)
 		LOG_INF("Sensor clock rate: %.2fHz", (double)clock_actual_rate);
 
 	k_usleep(250); // wait for sensor register reset // TODO: is this needed?
-	float accel_initial_time = sensor_update_time_ms / 1000.0; // configure with ~200Hz ODR
+	float accel_initial_time = 1.0 / CONFIG_SENSOR_GYRO_ODR; // configure with ~1000Hz ODR
 	float gyro_initial_time = 1.0 / CONFIG_SENSOR_GYRO_ODR; // configure with ~1000Hz ODR
 	err = sensor_imu->init(&sensor_imu_dev, clock_actual_rate, accel_initial_time, gyro_initial_time, &accel_actual_time, &gyro_actual_time);
 	LOG_INF("Accelerometer initial rate: %.2fHz", 1.0 / (double)accel_actual_time);
@@ -591,9 +591,23 @@ void main_imu_thread(void)
 			float *gyroBias = sensor_calibration_get_gyroBias();
 			for (uint16_t i = 0; i < packets; i++) // TODO: fifo_process_ext is available, need to implement it
 			{
-				float raw_g[3];
-				if (sensor_imu->fifo_process(i, rawData, raw_g))
+				float raw_a[3] = {0};
+				float raw_g[3] = {0};
+				if (sensor_imu->fifo_process(i, rawData, raw_a, raw_g))
 					continue; // skip on error
+
+#if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
+				apply_BAinv(raw_a, sensor_calibration_get_accBAinv());
+				float ax = raw_a[0];
+				float ay = raw_a[1];
+				float az = raw_a[2];
+#else
+				float ax = raw_a[0] - accelBias[0];
+				float ay = raw_a[1] - accelBias[1];
+				float az = raw_a[2] - accelBias[2];
+#endif
+				float a[] = {SENSOR_ACCELEROMETER_AXES_ALIGNMENT};
+
 				// transform and convert to float values
 				float gx = raw_g[0] - gyroBias[0]; //gres
 				float gy = raw_g[1] - gyroBias[1]; //gres
@@ -602,8 +616,7 @@ void main_imu_thread(void)
 				memcpy(g, g_aligned, sizeof(g));
 
 				// Process fusion
-				sensor_fusion->update_gyro(g, gyro_actual_time);
-//				sensor_fusion->update(g, a, m, gyro_actual_time);
+				sensor_fusion->update(g, a, z, gyro_actual_time);
 
 				if (mag_available && mag_enabled)
 				{
@@ -620,7 +633,7 @@ void main_imu_thread(void)
 				}
 				processed_packets++;
 			}
-			sensor_fusion->update(z, a, m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
+			sensor_fusion->update(z, z, m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
 
 			// Free the FIFO buffer
 			k_free(rawData);

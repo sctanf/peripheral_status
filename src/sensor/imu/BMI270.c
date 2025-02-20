@@ -7,6 +7,8 @@
 #include "BMI270_firmware.h"
 #include "sensor/sensor_none.h"
 
+#define PACKET_SIZE 12
+
 static const float accel_sensitivity = 16.0f / 32768.0f; // Always 16G
 static const float gyro_sensitivity = 2000.0f / 32768.0f; // Always 2000dps
 
@@ -21,6 +23,7 @@ static int factor_zx_read(const struct i2c_dt_spec *dev_i2c);
 
 int bmi_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
+	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	uint8_t status;
 	int err = i2c_reg_write_byte_dt(dev_i2c, BMI270_PWR_CONF, 0x00); // disable adv_power_save
 	k_usleep(450);
@@ -55,7 +58,7 @@ int bmi_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_ti
 	err |= i2c_reg_write_byte_dt(dev_i2c, BMI270_GYR_RANGE, RANGE_2000);
 	err |= bmi_update_odr(dev_i2c, accel_time, gyro_time, accel_actual_time, gyro_actual_time);
 	err |= i2c_reg_write_byte_dt(dev_i2c, BMI270_FIFO_CONFIG_0, 0x00); // do not return sensortime frame
-	err |= i2c_reg_write_byte_dt(dev_i2c, BMI270_FIFO_CONFIG_1, 0x80); // enable gyro data in FIFO, don't store header
+	err |= i2c_reg_write_byte_dt(dev_i2c, BMI270_FIFO_CONFIG_1, 0xC0); // enable a+g data in FIFO, don't store header
 	if (err)
 		LOG_ERR("I2C error");
 	return (err < 0 ? err : 0);
@@ -229,45 +232,51 @@ uint16_t bmi_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_
 	int err = 0;
 	uint16_t total = 0;
 	uint16_t packets = UINT16_MAX;
-	while (packets > 0 && len >= 6)
+	while (packets > 0 && len >= PACKET_SIZE)
 	{
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_LENGTH_0, &rawCount[0], 2);
-		uint16_t count = (uint16_t)((rawCount[1] & 1) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
-		packets = count / 6; // FIFO packet size is 6 bytes for gyro only
-		uint16_t limit = len / 6;
+		uint16_t count = (uint16_t)((rawCount[1] & 0x3F) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
+		packets = count / PACKET_SIZE;
+		uint16_t limit = len / PACKET_SIZE;
 		if (packets > limit)
 		{
 			packets = limit;
-			count = packets * 6;
+			count = packets * PACKET_SIZE;
 		}
 		uint16_t offset = 0;
 		while (count > 0)
 		{
-			err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_DATA, &data[offset], count > 64 ? 64 : count); // Read less than 255 at a time (for nRF52832)
-			offset += 64;
-			count = count > 64 ? count - 64 : 0;
+			err |= i2c_burst_read_dt(dev_i2c, BMI270_FIFO_DATA, &data[offset], count > 252 ? 252 : count); // Read less than 255 at a time (for nRF52832)
+			offset += 252;
+			count = count > 252 ? count - 252 : 0;
 		}
 		if (err)
 			LOG_ERR("I2C error");
-		data += packets * 6;
-		len -= packets * 6;
+		data += packets * PACKET_SIZE;
+		len -= packets * PACKET_SIZE;
 		total += packets;
 	}
 	return total;
 }
 
-int bmi_fifo_process(uint16_t index, uint8_t *data, float g[3])
+int bmi_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
-	index *= 6; // Packet size 6 bytes
+	index *= PACKET_SIZE;
 	if (data[index] == 0x00 && data[index + 1] == 0x80)
 		return 1; // Skip overread packets
+	float a_bmi[3];
 	float g_bmi[3];
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		g_bmi[i] = (int16_t)((((uint16_t)data[index + (i * 2) + 1]) << 8) | data[index + (i * 2)]);
+		a_bmi[i] = (int16_t)((((uint16_t)data[index + 7 + (i * 2)]) << 8) | data[index + 6 + (i * 2)]);
+		a_bmi[i] *= accel_sensitivity;
+		g_bmi[i] = (int16_t)((((uint16_t)data[index + 1 + (i * 2)]) << 8) | data[index + (i * 2)]);
 		g_bmi[i] *= gyro_sensitivity;
 	}
+	a[0] = -a_bmi[1];
+	a[1] = a_bmi[0];
+	a[2] = a_bmi[2];
 	// Ratex = DATA_15<<8+DATA_14 - GYR_CAS.factor_zx * (DATA_19<<8+DATA_18) / 2^9
 	g_bmi[0] -= g_bmi[2] * factor_zx;
 	g[0] = -g_bmi[1];

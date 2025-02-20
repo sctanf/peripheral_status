@@ -83,7 +83,7 @@ void lsm_shutdown(const struct i2c_dt_spec *dev_i2c);
 int lsm_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time);
 
 uint16_t lsm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len);
-int lsm_fifo_process(uint16_t index, uint8_t *data, float g[3]);
+int lsm_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3]);
 void lsm_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3]);
 void lsm_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3]);
 float lsm_temp_read(const struct i2c_dt_spec *dev_i2c);
@@ -91,7 +91,7 @@ float lsm_temp_read(const struct i2c_dt_spec *dev_i2c);
 void lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c);
 
 int lsm_ext_setup(uint8_t ext_addr, uint8_t ext_reg);
-int lsm_fifo_process_ext(uint16_t index, uint8_t *data, float g[3], float a[3], uint8_t *raw_m);
+int lsm_fifo_process_ext(uint16_t index, uint8_t *data, float a[3], float g[3], uint8_t *raw_m);
 void lsm_ext_read(const struct i2c_dt_spec *dev_i2c, uint8_t *raw_m);
 int lsm_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough);
 

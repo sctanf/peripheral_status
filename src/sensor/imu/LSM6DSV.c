@@ -5,6 +5,8 @@
 
 #include "LSM6DSV.h"
 
+#define PACKET_SIZE 7
+
 static const float accel_sensitivity = 16.0f / 32768.0f; // Always 16G (FS = ±16 g: 0.488 mg/LSB)
 static const float gyro_sensitivity = 0.070f; // Always 2000dps (FS = ±2000 dps: 70 mdps/LSB)
 
@@ -227,7 +229,7 @@ int lsm_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, float gy
 	int err = i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL1, OP_MODE_XL << 4 | ODR_XL); // set accel ODR and mode
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL2, OP_MODE_G << 4 | ODR_G); // set gyro ODR and mode
 
-	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_FIFO_CTRL3, (use_ext_fifo ? ODR_XL : 0x00) << 0 | ODR_G << 4); // set accel Not batched, set gyro batch rate
+	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_FIFO_CTRL3, ODR_XL | (ODR_G << 4)); // set accel and gyro batch rate
 	if (err)
 		LOG_ERR("I2C error");
 
@@ -242,37 +244,48 @@ uint16_t lsm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_
 	int err = 0;
 	uint16_t total = 0;
 	uint16_t count = UINT16_MAX;
-	while (count > 0 && len >= 7)
+	while (count > 0 && len >= PACKET_SIZE)
 	{
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, LSM6DSV_FIFO_STATUS1, &rawCount[0], 2);
 		count = (uint16_t)((rawCount[1] & 3) << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value. Only LSB on FIFO_STATUS2 is used, but we mask 2nd bit too
-		uint16_t limit = len / 7;
+		uint16_t limit = len / PACKET_SIZE;
 		if (count > limit)
 			count = limit;
 		for (int i = 0; i < count; i++)
-			err |= i2c_burst_read_dt(dev_i2c, LSM6DSV_FIFO_DATA_OUT_TAG, &data[i * 7], 7); // Packet size is always 7 bytes
+			err |= i2c_burst_read_dt(dev_i2c, LSM6DSV_FIFO_DATA_OUT_TAG, &data[i * PACKET_SIZE], PACKET_SIZE);
 		if (err)
 			LOG_ERR("I2C error");
-		data += count * 7;
-		len -= count * 7;
+		data += count * PACKET_SIZE;
+		len -= count * PACKET_SIZE;
 		total += count;
 	}
 	return total;
 }
 
-int lsm_fifo_process(uint16_t index, uint8_t *data, float g[3])
+int lsm_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3]) // TODO: ok to return data as separate?
 {
-	index *= 7; // Packet size 7 bytes
-	if ((data[index] >> 3) != 0x01)
-		return 1; // Ignore all packets except Gyroscope NC (Gyroscope uncompressed data)
-	for (int i = 0; i < 3; i++) // x, y, z
+	index *= PACKET_SIZE;
+	if ((data[index] >> 3) == 0x02) // Accelerometer NC (Accelerometer uncompressed data)
 	{
-		g[i] = (int16_t)((((uint16_t)data[index + (i * 2) + 2]) << 8) | data[index + (i * 2) + 1]);
-		g[i] *= gyro_sensitivity;
+		for (int i = 0; i < 3; i++) // x, y, z
+		{
+			a[i] = (int16_t)((((uint16_t)data[index + 2 + (i * 2)]) << 8) | data[index + 1 + (i * 2)]);
+			a[i] *= accel_sensitivity;
+		}
+		return 0;
+	}
+	if ((data[index] >> 3) == 0x01) // Gyroscope NC (Gyroscope uncompressed data)
+	{
+		for (int i = 0; i < 3; i++) // x, y, z
+		{
+			g[i] = (int16_t)((((uint16_t)data[index + 2 + (i * 2)]) << 8) | data[index + 1 + (i * 2)]);
+			g[i] *= gyro_sensitivity;
+		}
+		return 0;
 	}
 	// TODO: need to skip invalid data
-	return 0;
+	return 1;
 }
 
 void lsm_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3])
@@ -363,20 +376,11 @@ int lsm_ext_setup(uint8_t addr, uint8_t reg)
 	}
 }
 
-int lsm_fifo_process_ext(uint16_t index, uint8_t *data, float g[3], float a[3], uint8_t *raw_m)
+int lsm_fifo_process_ext(uint16_t index, uint8_t *data, float a[3], float g[3], uint8_t *raw_m)
 {
-	if (!lsm_fifo_process(index, data, g)) // try processing gyro first
+	if (!lsm_fifo_process(index, data, a, g)) // try processing a+g first
 		return 0;
-	index *= 7; // Packet size 7 bytes
-	if ((data[index] >> 3) == 0x02)
-	{
-		for (int i = 0; i < 3; i++) // x, y, z
-		{
-			a[i] = (int16_t)((((uint16_t)data[index + (i * 2) + 2]) << 8) | data[index + (i * 2) + 1]);
-			a[i] *= accel_sensitivity;
-		}
-		return 0;
-	}
+	index *= PACKET_SIZE;
 	if ((data[index] >> 3) == 0x0E)
 	{
 		memcpy(raw_m, &data[index + 1], 6);
