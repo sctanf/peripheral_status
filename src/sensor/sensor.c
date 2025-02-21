@@ -597,42 +597,51 @@ void main_imu_thread(void)
 				if (sensor_imu->fifo_process(i, rawData, raw_a, raw_g))
 					continue; // skip on error
 
-#if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
-				apply_BAinv(raw_a, sensor_calibration_get_accBAinv());
-				float ax = raw_a[0];
-				float ay = raw_a[1];
-				float az = raw_a[2];
-#else
-				float ax = raw_a[0] - accelBias[0];
-				float ay = raw_a[1] - accelBias[1];
-				float az = raw_a[2] - accelBias[2];
-#endif
-				float a[] = {SENSOR_ACCELEROMETER_AXES_ALIGNMENT};
-
-				// transform and convert to float values
-				float gx = raw_g[0] - gyroBias[0]; //gres
-				float gy = raw_g[1] - gyroBias[1]; //gres
-				float gz = raw_g[2] - gyroBias[2]; //gres
-				float g_aligned[] = {SENSOR_GYROSCOPE_AXES_ALIGNMENT};
-				memcpy(g, g_aligned, sizeof(g));
-
-				// Process fusion
-				sensor_fusion->update(g, z, z, gyro_actual_time); // using update function as it allows missing gyro data TODO: filter from here, not in the fusion
-				sensor_fusion->update(z, a, z, accel_actual_time);
- 
-				if (mag_available && mag_enabled)
+				// TODO: split into separate functions
+				if (raw_g[0] != 0 || raw_g[1] != 0 || raw_g[2] != 0)
 				{
-					// Get fusion's corrected gyro data (or get gyro bias from fusion) and use it here
-					float g_off[3] = {};
-					sensor_fusion->get_gyro_bias(g_off);
-					for (int i = 0; i < 3; i++)
-						g_off[i] = g[i] - g_off[i];
+					float gx = raw_g[0] - gyroBias[0]; //gres
+					float gy = raw_g[1] - gyroBias[1]; //gres
+					float gz = raw_g[2] - gyroBias[2]; //gres
+					float g_aligned[] = {SENSOR_GYROSCOPE_AXES_ALIGNMENT};
+					memcpy(g, g_aligned, sizeof(g));
 
-					// Get the highest gyro speed
-					float gyro_speed_square = g_off[0] * g_off[0] + g_off[1] * g_off[1] + g_off[2] * g_off[2];
-					if (gyro_speed_square > max_gyro_speed_square)
-						max_gyro_speed_square = gyro_speed_square;
+					// Process fusion
+					sensor_fusion->update(g, z, z, gyro_actual_time);
+
+					if (mag_available && mag_enabled)
+					{
+						// Get fusion's corrected gyro data (or get gyro bias from fusion) and use it here
+						float g_off[3] = {};
+						sensor_fusion->get_gyro_bias(g_off);
+						for (int i = 0; i < 3; i++)
+							g_off[i] = g[i] - g_off[i];
+	
+						// Get the highest gyro speed
+						float gyro_speed_square = g_off[0] * g_off[0] + g_off[1] * g_off[1] + g_off[2] * g_off[2];
+						if (gyro_speed_square > max_gyro_speed_square)
+							max_gyro_speed_square = gyro_speed_square;
+					}
 				}
+
+				if (raw_a[0] != 0 || raw_a[1] != 0 || raw_a[2] != 0)
+				{
+#if CONFIG_SENSOR_USE_6_SIDE_CALIBRATION
+					apply_BAinv(raw_a, sensor_calibration_get_accBAinv());
+					float ax = raw_a[0];
+					float ay = raw_a[1];
+					float az = raw_a[2];
+#else
+					float ax = raw_a[0] - accelBias[0];
+					float ay = raw_a[1] - accelBias[1];
+					float az = raw_a[2] - accelBias[2];
+#endif
+					float a[] = {SENSOR_ACCELEROMETER_AXES_ALIGNMENT};
+
+					// Process fusion
+					sensor_fusion->update(z, a, z, accel_actual_time);
+				}
+
 				processed_packets++;
 			}
 			sensor_fusion->update(z, z, m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
