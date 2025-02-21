@@ -64,7 +64,11 @@ int sensor_scan(struct i2c_dt_spec *i2c_dev, uint8_t *i2c_dev_reg, int dev_addr_
 				continue; // if an address was provided try to scan it first
 			LOG_DBG("Scanning address: 0x%02X", addr);
 
-			// The first read on ICM45686 (potentially others?) always fails, so perform a dummy read on each address first 
+			// The first read on ICM-45686 can fail, so perform a dummy read on each address first
+			/* AN-000364
+			 * In I2C mode, after chip power-up, the host should perform one retry
+			 * on the very first I2C transaction if it receives a NACK 
+			 */
 			uint8_t dummy;
 			i2c_reg_read_byte(dev, addr, 0x00, &dummy);
 
