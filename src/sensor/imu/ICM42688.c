@@ -33,7 +33,6 @@ LOG_MODULE_REGISTER(ICM42688, LOG_LEVEL_DBG);
 
 int icm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
-	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	int err = 0;
 //	i2c_reg_write_byte_dt(dev_i2c, ICM42688_INT_SOURCE0, 0x00); // disable default interrupt (RESET_DONE)
 	if (clock_rate > 0)

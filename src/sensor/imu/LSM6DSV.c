@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(LSM6DSV, LOG_LEVEL_DBG);
 
 int lsm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
-	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	int err = i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL6, FS_G_2000DPS); // set gyro FS
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL8, FS_XL_16G); // set accel FS
 	if (err)
