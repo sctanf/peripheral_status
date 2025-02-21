@@ -291,6 +291,8 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	return total;
 }
 
+static const uint8_t invalid[6] = {0x00, 0x80, 0x00, 0x80, 0x00, 0x80};
+
 int icm45_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
 	index *= PACKET_SIZE;
@@ -298,14 +300,22 @@ int icm45_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 		return 1; // Skip invalid header
 	// Empty packet is 7F filled
 	// combine into 20 bit values in 32 bit int
-	float a_raw[3];
-	float g_raw[3];
-	for (int i = 0; i < 3; i++) // accel x, y, z
-		a_raw[i] = (int32_t)((((uint32_t)data[index + 2 + (i * 2)]) << 24) | (((uint32_t)data[index + 1 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
-	for (int i = 0; i < 3; i++) // gyro x, y, z
-		g_raw[i] = (int32_t)((((uint32_t)data[index + 8 + (i * 2)]) << 24) | (((uint32_t)data[index + 7 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
-	if (g_raw[0] < (-32766 << 16) || g_raw[1] < (-32766 << 16) || g_raw[2] < (-32766 << 16)) // TODO: check if correct
-		return 1; // Skip invalid data
+	float a_raw[3] = {0};
+	float g_raw[3] = {0};
+	if (memcmp(&data[index + 1], invalid, sizeof(invalid))) // valid accel data
+	{
+		for (int i = 0; i < 3; i++) // accel x, y, z
+			a_raw[i] = (int32_t)((((uint32_t)data[index + 2 + (i * 2)]) << 24) | (((uint32_t)data[index + 1 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
+	}
+	if (memcmp(&data[index + 7], invalid, sizeof(invalid))) // valid gyro data
+	{
+		for (int i = 0; i < 3; i++) // gyro x, y, z
+			g_raw[i] = (int32_t)((((uint32_t)data[index + 8 + (i * 2)]) << 24) | (((uint32_t)data[index + 7 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
+	}
+	else if (!memcmp(&data[index + 1], invalid, sizeof(invalid))) // Skip invalid data
+	{
+		return 1;
+	}
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
 		a_raw[i] *= accel_sensitivity_32;
