@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(ICM45686, LOG_LEVEL_DBG);
 
 int icm45_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_time, float gyro_time, float *accel_actual_time, float *gyro_actual_time)
 {
-	accel_time = gyro_time; // tie accel rate to gyro rate due to packet format
 	// special handling of unknown fifo corruption
 	fifo_primed = false;
 
