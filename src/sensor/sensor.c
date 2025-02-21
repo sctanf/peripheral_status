@@ -445,6 +445,7 @@ int main_imu_init(void) {
 	k_usleep(250); // wait for sensor register reset // TODO: is this needed?
 	float accel_initial_time = 1.0 / CONFIG_SENSOR_GYRO_ODR; // configure with ~1000Hz ODR
 	float gyro_initial_time = 1.0 / CONFIG_SENSOR_GYRO_ODR; // configure with ~1000Hz ODR
+	float mag_initial_time = sensor_update_time_ms / 1000.0; // configure with ~200Hz ODR
 	err = sensor_imu->init(&sensor_imu_dev, clock_actual_rate, accel_initial_time, gyro_initial_time, &accel_actual_time, &gyro_actual_time);
 	LOG_INF("Accelerometer initial rate: %.2fHz", 1.0 / (double)accel_actual_time);
 	LOG_INF("Gyrometer initial rate: %.2fHz", 1.0 / (double)gyro_actual_time);
@@ -456,7 +457,7 @@ int main_imu_init(void) {
 	if (mag_available && mag_enabled) {
 		err = sensor_mag->init(
 			&sensor_mag_dev,
-			sensor_update_time_ms / 1000.0,
+			mag_initial_time,
 			&mag_actual_time
 		);  // configure with ~200Hz ODR
 		LOG_INF("Magnetometer initial rate: %.2fHz", 1.0 / (double)mag_actual_time);
@@ -477,7 +478,7 @@ int main_imu_init(void) {
 	}
 	else
 	{
-		sensor_fusion->init(gyro_actual_time, accel_initial_time, accel_initial_time); // TODO: using initial time since accel and mag are not polled at the actual rate
+		sensor_fusion->init(gyro_actual_time, accel_actual_time, mag_initial_time); // TODO: using initial time since mag are not polled at the actual rate
 	}
 
 	// Calibrate IMU
@@ -674,8 +675,9 @@ void main_imu_thread(void) {
 				memcpy(g, g_aligned, sizeof(g));
 
 				// Process fusion
-				sensor_fusion->update(g, a, z, gyro_actual_time);
-
+				sensor_fusion->update(g, z, z, gyro_actual_time); // using update function as it allows missing gyro data TODO: filter from here, not in the fusion
+				sensor_fusion->update(z, a, z, accel_actual_time);
+ 
 				if (mag_available && mag_enabled)
 				{
 					// Get fusion's corrected gyro data (or get gyro bias from fusion) and use it here
