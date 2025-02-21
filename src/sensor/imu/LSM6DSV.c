@@ -263,7 +263,7 @@ uint16_t lsm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_
 	return total;
 }
 
-int lsm_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3]) // TODO: ok to return data as separate?
+int lsm_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
 	index *= PACKET_SIZE;
 	if ((data[index] >> 3) == 0x02) // Accelerometer NC (Accelerometer uncompressed data)

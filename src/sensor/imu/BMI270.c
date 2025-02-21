@@ -259,10 +259,14 @@ uint16_t bmi_fifo_read(const struct i2c_dt_spec* dev_i2c, uint8_t* data, uint16_
 	return total;
 }
 
+static const uint8_t overread[2] = {0x00, 0x80};
+static const uint8_t invalid_accel[6] = {0x01, 0x7F, 0x00, 0x80, 0x00, 0x80};
+static const uint8_t invalid_gyro[6] = {0x02, 0x7F, 0x00, 0x80, 0x00, 0x80};
+
 int bmi_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
 	index *= PACKET_SIZE;
-	if (data[index] == 0x00 && data[index + 1] == 0x80)
+	if (!memcmp(&data[index], overread, sizeof(overread)))
 		return 1; // Skip overread packets
 	float a_bmi[3];
 	float g_bmi[3];
@@ -273,14 +277,20 @@ int bmi_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 		g_bmi[i] = (int16_t)((((uint16_t)data[index + 1 + (i * 2)]) << 8) | data[index + (i * 2)]);
 		g_bmi[i] *= gyro_sensitivity;
 	}
-	a[0] = -a_bmi[1];
-	a[1] = a_bmi[0];
-	a[2] = a_bmi[2];
-	// Ratex = DATA_15<<8+DATA_14 - GYR_CAS.factor_zx * (DATA_19<<8+DATA_18) / 2^9
-	g_bmi[0] -= g_bmi[2] * factor_zx;
-	g[0] = -g_bmi[1];
-	g[1] = g_bmi[0];
-	g[2] = g_bmi[2];
+	if (memcmp(&data[index + 6], invalid_accel, sizeof(invalid_accel))) // valid accel data
+	{
+		a[0] = -a_bmi[1];
+		a[1] = a_bmi[0];
+		a[2] = a_bmi[2];
+	}
+	if (memcmp(&data[index], invalid_gyro, sizeof(invalid_gyro))) // valid gyro data
+	{
+		// Ratex = DATA_15<<8+DATA_14 - GYR_CAS.factor_zx * (DATA_19<<8+DATA_18) / 2^9
+		g_bmi[0] -= g_bmi[2] * factor_zx;
+		g[0] = -g_bmi[1];
+		g[1] = g_bmi[0];
+		g[2] = g_bmi[2];
+	}
 	return 0;
 }
 
