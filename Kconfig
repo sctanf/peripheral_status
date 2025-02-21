@@ -92,6 +92,14 @@ config WOM_USE_DCDC
     help
         Use DCDC instead of LDO in IMU wake up state if it is more efficient.
 
+config SENSOR_ACCEL_ODR
+    int "Accelerometer output data rate (Hz)"
+    default 800
+    help
+        Requested accelerometer output data rate. Actual rate will be raised to the nearest supported rate.
+        A higher rate will increase the time to read and process sensor data.
+        400Hz is recommended for IMUs with poor accelerometer rate noise density.
+
 config SENSOR_GYRO_ODR
     int "Gyrometer output data rate (Hz)"
     default 800
