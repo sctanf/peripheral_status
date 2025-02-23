@@ -661,8 +661,8 @@ void main_imu_thread(void) {
 					float gx = raw_g[0] - gyroBias[0]; //gres
 					float gy = raw_g[1] - gyroBias[1]; //gres
 					float gz = raw_g[2] - gyroBias[2]; //gres
-					float g_aligned[] = {SENSOR_GYROSCOPE_AXES_ALIGNMENT};
-					memcpy(g, g_aligned, sizeof(g));
+					float aligned[] = {SENSOR_GYROSCOPE_AXES_ALIGNMENT};
+					memcpy(g, aligned, sizeof(g));
 
 					// Process fusion
 					sensor_fusion->update(g, z, z, gyro_actual_time);
