@@ -586,7 +586,6 @@ void main_imu_thread(void)
 
 			// Fuse all data
 			float g[3] = {0};
-			float z[3] = {0};
 			max_gyro_speed_square = 0;
 			int processed_packets = 0;
 			float *gyroBias = sensor_calibration_get_gyroBias();
