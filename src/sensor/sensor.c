@@ -665,7 +665,7 @@ void main_imu_thread(void) {
 					memcpy(g, aligned, sizeof(g));
 
 					// Process fusion
-					sensor_fusion->update(g, z, z, gyro_actual_time);
+					sensor_fusion->update_gyro(g, gyro_actual_time);
 
 					if (mag_available && mag_enabled)
 					{
@@ -697,12 +697,12 @@ void main_imu_thread(void) {
 					float a[] = {SENSOR_ACCELEROMETER_AXES_ALIGNMENT};
 
 					// Process fusion
-					sensor_fusion->update(z, a, z, accel_actual_time);
+					sensor_fusion->update_accel(a, accel_actual_time);
 				}
 
 				processed_packets++;
 			}
-			sensor_fusion->update(z, z, m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
+			sensor_fusion->update_mag(m, sensor_update_time_ms / 1000.0); // TODO: use actual time?
 
 			// Free the FIFO buffer
 			k_free(rawData);
