@@ -36,6 +36,11 @@ int icm45_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_
 		err |= i2c_reg_update_byte_dt(dev_i2c, ICM45686_RTC_CONFIG, 0x20, 0x20); // enable external CLKIN
 //		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_RTC_CONFIG, 0x23); // enable external CLKIN (0x20, default register value is 0x03)
 	}
+	uint8_t ireg_buf[3];
+	ireg_buf[0] = ICM45686_IPREG_TOP1; // address is a word, icm is big endian
+	ireg_buf[1] = ICM45686_SREG_CTRL;
+	ireg_buf[2] = 0x02; // set big endian
+	err |= i2c_burst_write_dt(dev_i2c, ICM45686_IREG_ADDR_15_8, ireg_buf, 3); // write buffer
 	last_accel_odr = 0xff; // reset last odr
 	last_gyro_odr = 0xff; // reset last odr
 	err |= icm45_update_odr(dev_i2c, accel_time, gyro_time, accel_actual_time, gyro_actual_time);
@@ -249,7 +254,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 		memset(data, 0x7F, PACKET_SIZE); // Empty packet is 7F filled
 		uint8_t rawCount[2];
 		err |= i2c_burst_read_dt(dev_i2c, ICM45686_FIFO_COUNT_0, &rawCount[0], 2);
-		packets = (uint16_t)(rawCount[1] << 8 | rawCount[0]); // Turn the 16 bits into a unsigned 16-bit value
+		packets = (uint16_t)(rawCount[0] << 8 | rawCount[1]); // Turn the 16 bits into a unsigned 16-bit value
 		uint16_t limit = len / PACKET_SIZE;
 		if (packets > limit)
 			packets = limit;
@@ -291,7 +296,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 	return total;
 }
 
-static const uint8_t invalid[6] = {0x00, 0x80, 0x00, 0x80, 0x00, 0x80};
+static const uint8_t invalid[6] = {0x80, 0x00, 0x80, 0x00, 0x80, 0x00};
 
 int icm45_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 {
@@ -305,12 +310,12 @@ int icm45_fifo_process(uint16_t index, uint8_t *data, float a[3], float g[3])
 	if (memcmp(&data[index + 1], invalid, sizeof(invalid))) // valid accel data
 	{
 		for (int i = 0; i < 3; i++) // accel x, y, z
-			a_raw[i] = (int32_t)((((uint32_t)data[index + 2 + (i * 2)]) << 24) | (((uint32_t)data[index + 1 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
+			a_raw[i] = (int32_t)((((uint32_t)data[index + 1 + (i * 2)]) << 24) | (((uint32_t)data[index + 2 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0xF0) << 8));
 	}
 	if (memcmp(&data[index + 7], invalid, sizeof(invalid))) // valid gyro data
 	{
 		for (int i = 0; i < 3; i++) // gyro x, y, z
-			g_raw[i] = (int32_t)((((uint32_t)data[index + 8 + (i * 2)]) << 24) | (((uint32_t)data[index + 7 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
+			g_raw[i] = (int32_t)((((uint32_t)data[index + 7 + (i * 2)]) << 24) | (((uint32_t)data[index + 8 + (i * 2)]) << 16) | (((uint32_t)data[index + 17 + i] & 0x0F) << 12));
 	}
 	else if (!memcmp(&data[index + 1], invalid, sizeof(invalid))) // Skip invalid data
 	{
@@ -334,7 +339,7 @@ void icm45_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3])
 		LOG_ERR("I2C error");
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		a[i] = (int16_t)((((uint16_t)rawAccel[(i * 2) + 1]) << 8) | rawAccel[i * 2]);
+		a[i] = (int16_t)((((uint16_t)rawAccel[i * 2]) << 8) | rawAccel[1 + (i * 2)]);
 		a[i] *= accel_sensitivity;
 	}
 }
@@ -347,7 +352,7 @@ void icm45_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3])
 		LOG_ERR("I2C error");
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		g[i] = (int16_t)((((uint16_t)rawGyro[(i * 2) + 1]) << 8) | rawGyro[i * 2]);
+		g[i] = (int16_t)((((uint16_t)rawGyro[i * 2]) << 8) | rawGyro[1 + (i * 2)]);
 		g[i] *= gyro_sensitivity;
 	}
 }
@@ -359,7 +364,7 @@ float icm45_temp_read(const struct i2c_dt_spec *dev_i2c)
 	if (err)
 		LOG_ERR("I2C error");
 	// Temperature in Degrees Centigrade = (TEMP_DATA / 128) + 25
-	float temp = (int16_t)((((uint16_t)rawTemp[1]) << 8) | rawTemp[0]);
+	float temp = (int16_t)((((uint16_t)rawTemp[0]) << 8) | rawTemp[1]);
 	temp /= 128;
 	temp += 25;
 	return temp;
