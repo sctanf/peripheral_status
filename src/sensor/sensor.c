@@ -585,6 +585,8 @@ void main_imu_thread(void)
 			}
 
 			// Fuse all data
+//			float a_sum[3] = {0};
+//			int a_count = 0;
 			float g[3] = {0};
 			max_gyro_speed_square = 0;
 			int processed_packets = 0;
@@ -639,6 +641,10 @@ void main_imu_thread(void)
 
 					// Process fusion
 					sensor_fusion->update_accel(a, accel_actual_time);
+
+//					for (int i = 0; i < 3; i++)
+//						a_sum[i] += a[i];
+//					a_count++;
 				}
 
 				processed_packets++;
@@ -647,6 +653,18 @@ void main_imu_thread(void)
 
 			// Free the FIFO buffer
 			k_free(rawData);
+
+//			// Copy average acceleration for this frame
+//			if (a_count > 0)
+//			{
+//				for (int i = 0; i < 3; i++)
+//					a[i] = a_sum[i] / a_count;
+//			}
+//			else
+//			{
+//				for (int i = 0; i < 3; i++)
+//					a[i] = 0;
+//			}
 
 			// Check packet processing
 			if (processed_packets == 0)
