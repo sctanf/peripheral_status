@@ -585,8 +585,8 @@ void main_imu_thread(void)
 			}
 
 			// Fuse all data
-//			float a_sum[3] = {0};
-//			int a_count = 0;
+			float a_sum[3] = {0};
+			int a_count = 0;
 			float g[3] = {0};
 			max_gyro_speed_square = 0;
 			int processed_packets = 0;
@@ -642,9 +642,9 @@ void main_imu_thread(void)
 					// Process fusion
 					sensor_fusion->update_accel(a, accel_actual_time);
 
-//					for (int i = 0; i < 3; i++)
-//						a_sum[i] += a[i];
-//					a_count++;
+					for (int i = 0; i < 3; i++)
+						a_sum[i] += a[i];
+					a_count++;
 				}
 
 				processed_packets++;
@@ -654,17 +654,17 @@ void main_imu_thread(void)
 			// Free the FIFO buffer
 			k_free(rawData);
 
-//			// Copy average acceleration for this frame
-//			if (a_count > 0)
-//			{
-//				for (int i = 0; i < 3; i++)
-//					a[i] = a_sum[i] / a_count;
-//			}
-//			else
-//			{
-//				for (int i = 0; i < 3; i++)
-//					a[i] = 0;
-//			}
+			// Copy average acceleration for this frame
+			if (a_count > 0)
+			{
+				for (int i = 0; i < 3; i++)
+					a[i] = a_sum[i] / a_count;
+			}
+			else
+			{
+				for (int i = 0; i < 3; i++)
+					a[i] = 0;
+			}
 
 			// Check packet processing
 			if (processed_packets == 0)
@@ -690,11 +690,18 @@ void main_imu_thread(void)
 			// Update fusion gyro sanity?
 			sensor_fusion->update_gyro_sanity(g, m);
 
-			// Get updated linear acceleration and quaternion from fusion
-			float lin_a[3] = {0};
-			sensor_fusion->get_lin_a(lin_a);
+			// Get updated quaternion from fusion
 			sensor_fusion->get_quat(q);
 			q_normalize(q, q); // safe to use self as output
+
+			// Get linear acceleration
+			float lin_a[3] = {0};
+			float vec_gravity[3] = {0};
+			vec_gravity[0] = 2.0f * (q[1] * q[3] - q[0] * q[2]);
+			vec_gravity[1] = 2.0f * (q[2] * q[3] + q[0] * q[1]);
+			vec_gravity[2] = 2.0f * (q[0] * q[0] - 0.5f + q[3] * q[3]);
+			for (int i = 0; i < 3; i++)
+				lin_a[i] = a[i] - vec_gravity[i] * CONST_EARTH_GRAVITY; // gravity vector to m/s^2 before subtracting
 
 			// Check the IMU gyroscope
 			if (sensor_fusion->get_gyro_sanity() == 0 ? q_epsilon(q, last_q, 0.005) : q_epsilon(q, last_q, 0.05)) // Probably okay to use the constantly updating last_q
