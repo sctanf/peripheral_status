@@ -343,7 +343,7 @@ void icm_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3])
 		LOG_ERR("I2C error");
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		a[i] = (int16_t)((((uint16_t)rawAccel[i * 2]) << 8) | rawAccel[(i * 2) + 1]);
+		a[i] = (int16_t)((((uint16_t)rawAccel[i * 2]) << 8) | rawAccel[1 + (i * 2)]);
 		a[i] *= accel_sensitivity;
 	}
 }
@@ -356,7 +356,7 @@ void icm_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3])
 		LOG_ERR("I2C error");
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		g[i] = (int16_t)((((uint16_t)rawGyro[i * 2]) << 8) | rawGyro[(i * 2) + 1]);
+		g[i] = (int16_t)((((uint16_t)rawGyro[i * 2]) << 8) | rawGyro[1 + (i * 2)]);
 		g[i] *= gyro_sensitivity;
 	}
 }

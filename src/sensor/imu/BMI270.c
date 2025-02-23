@@ -303,7 +303,7 @@ void bmi_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3])
 	float a_bmi[3];
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		a_bmi[i] = (int16_t)((((uint16_t)rawAccel[(i * 2) + 1]) << 8) | rawAccel[i * 2]);
+		a_bmi[i] = (int16_t)((((uint16_t)rawAccel[1 + (i * 2)]) << 8) | rawAccel[i * 2]);
 		a_bmi[i] *= accel_sensitivity;
 	}
 	a[0] = -a_bmi[1];
@@ -320,7 +320,7 @@ void bmi_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3])
 	float g_bmi[3];
 	for (int i = 0; i < 3; i++) // x, y, z
 	{
-		g_bmi[i] = (int16_t)((((uint16_t)rawGyro[(i * 2) + 1]) << 8) | rawGyro[i * 2]);
+		g_bmi[i] = (int16_t)((((uint16_t)rawGyro[1 + (i * 2)]) << 8) | rawGyro[i * 2]);
 		g_bmi[i] *= gyro_sensitivity;
 	}
 	// Ratex = DATA_15<<8+DATA_14 - GYR_CAS.factor_zx * (DATA_19<<8+DATA_18) / 2^9
