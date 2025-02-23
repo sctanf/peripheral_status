@@ -753,7 +753,7 @@ void main_imu_thread(void) {
 			vec_gravity[1] = 2.0f * (q[2] * q[3] + q[0] * q[1]);
 			vec_gravity[2] = 2.0f * (q[0] * q[0] - 0.5f + q[3] * q[3]);
 			for (int i = 0; i < 3; i++)
-				lin_a[i] = a[i] - vec_gravity[i] * CONST_EARTH_GRAVITY; // gravity vector to m/s^2 before subtracting
+				lin_a[i] = (a[i] - vec_gravity[i]) * CONST_EARTH_GRAVITY; // vector to m/s^2
 
 			// Check the IMU gyroscope
 			if (sensor_fusion->get_gyro_sanity() == 0
