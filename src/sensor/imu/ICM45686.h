@@ -45,6 +45,8 @@
 
 #define ICM45686_SMC_CONTROL_0             0x58
 
+#define ICM45686_SREG_CTRL                 0x67
+
 #define ICM45686_ACCEL_WOM_X_THR           0x7E
 #define ICM45686_ACCEL_WOM_Y_THR           0x7F
 #define ICM45686_ACCEL_WOM_Z_THR           0x80
