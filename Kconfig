@@ -94,7 +94,7 @@ config WOM_USE_DCDC
 
 config SENSOR_ACCEL_ODR
     int "Accelerometer output data rate (Hz)"
-    default 800
+    default 400
     help
         Requested accelerometer output data rate. Actual rate will be raised to the nearest supported rate.
         A higher rate will increase the time to read and process sensor data.
