@@ -94,11 +94,10 @@ config WOM_USE_DCDC
 
 config SENSOR_ACCEL_ODR
     int "Accelerometer output data rate (Hz)"
-    default 400
+    default 200
     help
         Requested accelerometer output data rate. Actual rate will be raised to the nearest supported rate.
         A higher rate will increase the time to read and process sensor data.
-        400Hz is recommended for IMUs with poor accelerometer rate noise density.
 
 config SENSOR_GYRO_ODR
     int "Gyrometer output data rate (Hz)"
