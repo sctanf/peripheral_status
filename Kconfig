@@ -86,10 +86,81 @@ config WOM_USE_DCDC
     help
         Use DCDC instead of LDO in IMU wake up state if it is more efficient.
 
+menu "Sensor power saving"
+
+config SENSOR_LP_TIMEOUT
+    int "Sensor low power delay (ms)"
+    default 500
+    help
+        Low power timeout during no motion.
+
 config SENSOR_USE_LOW_POWER_2
     bool "Use additional low power modes"
     help
         Use a higher latency sensor mode during no motion.
+
+config USE_IMU_TIMEOUT
+    bool "Use IMU wake up state"
+    default y
+    depends on USE_IMU_WAKE_UP
+    help
+        Use IMU wake up state during no motion.
+
+config IMU_TIMEOUT_RAMP_MIN
+    int "Sensor timeout minimum delay (ms)"
+    default 1000
+    depends on USE_IMU_TIMEOUT || SENSOR_USE_LOW_POWER_2
+    help
+        Minimum timeout during no motion.
+
+config IMU_TIMEOUT_RAMP_MAX
+    int "Sensor timeout maximum delay (ms)"
+    default 15000
+    depends on USE_IMU_TIMEOUT || SENSOR_USE_LOW_POWER_2
+    help
+        Maximum timeout during no motion.
+
+config USE_ACTIVE_TIMEOUT
+    bool "Use activity timeout"
+    default y
+    depends on USE_IMU_WAKE_UP || USER_SHUTDOWN
+    help
+        Delay IMU wake up state or user shutdown during activity.
+
+choice 
+    prompt "Activity timeout mode"
+    default SLEEP_ON_ACTIVE_TIMEOUT
+    depends on USE_ACTIVE_TIMEOUT
+
+config SLEEP_ON_ACTIVE_TIMEOUT
+    bool "IMU wake up"
+    depends on USE_IMU_WAKE_UP
+    help
+        Use IMU wake up state when activity timeout elapses.
+
+config SHUTDOWN_ON_ACTIVE_TIMEOUT
+    bool "User shutdown"
+    depends on USER_SHUTDOWN
+    help
+        Use user shutdown when activity timeout elapses.
+
+endchoice
+
+config ACTIVE_TIMEOUT_THRESHOLD
+    int "Activity timeout threshold (ms)"
+    default 15000
+    depends on USE_ACTIVE_TIMEOUT
+    help
+        Trigger activity timeout after a certain threshold of activity.
+
+config ACTIVE_TIMEOUT_DELAY
+    int "Activity timeout delay (ms)"
+    default 900000
+    depends on USE_ACTIVE_TIMEOUT
+    help
+        Activity timeout duration when triggered.
+
+endmenu
 
 config SENSOR_ACCEL_ODR
     int "Accelerometer output data rate (Hz)"
