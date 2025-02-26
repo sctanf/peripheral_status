@@ -101,12 +101,12 @@ static void set_regulator(enum sys_regulator regulator)
 static int64_t system_off_timeout = 0;
 #endif
 
-void sys_request_WOM() // TODO: if IMU interrupt does not exist what does the system do?
+void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what does the system do?
 {
 	LOG_INF("IMU wake up requested");
 #if IMU_INT_EXISTS
 #if CONFIG_DELAY_SLEEP_ON_STATUS
-	if (!esb_ready() || !status_ready()) // Wait for esb to pair in case the user is still trying to pair the device
+	if (!force && (!esb_ready() || !status_ready())) // Wait for esb to pair in case the user is still trying to pair the device
 	{
 		if (!system_off_timeout)
 			system_off_timeout = k_uptime_get() + 30000; // allow system off after 30 seconds if status errors are still active

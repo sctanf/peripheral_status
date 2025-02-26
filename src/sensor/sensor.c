@@ -58,7 +58,7 @@ static float last_q[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // vector to hold quaternion
 
 static float q3[4] = {SENSOR_QUATERNION_CORRECTION}; // correction quaternion
 
-static int64_t last_lp2_time = 0;
+static int64_t last_suspend_attempt_time = 0;
 static int64_t last_data_time;
 static int64_t last_info_time;
 
@@ -480,6 +480,15 @@ enum sensor_sensor_mode {
 static enum sensor_sensor_mode sensor_mode = SENSOR_SENSOR_MODE_LOW_NOISE;
 static enum sensor_sensor_mode last_sensor_mode = SENSOR_SENSOR_MODE_LOW_NOISE;
 
+enum sensor_sensor_timeout {
+	SENSOR_SENSOR_TIMEOUT_IMU,
+	SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED,
+	SENSOR_SENSOR_TIMEOUT_ACTIVITY,
+	SENSOR_SENSOR_TIMEOUT_ACTIVITY_ELAPSED,
+};
+
+static enum sensor_sensor_timeout sensor_timeout = SENSOR_SENSOR_TIMEOUT_IMU;
+
 static bool main_running = false;
 static bool main_ok = false;
 static bool send_info = false;
@@ -706,30 +715,50 @@ void main_imu_thread(void)
 			// Check the IMU gyroscope
 			if (sensor_fusion->get_gyro_sanity() == 0 ? q_epsilon(q, last_q, 0.005) : q_epsilon(q, last_q, 0.05)) // Probably okay to use the constantly updating last_q
 			{
-				int64_t imu_timeout = CLAMP(last_data_time - last_lp2_time, 1 * 1000, 15 * 1000); // Ramp timeout from last_data_time
-				if (k_uptime_get() - last_data_time > imu_timeout) // No motion in last 1s - 10s
+				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER && k_uptime_get() - last_data_time > 500) // No motion in lp timeout
 				{
-					last_data_time = INT64_MAX; // only try to suspend once
-					LOG_INF("No motion from sensors in %llds", imu_timeout/1000);
-#if CONFIG_USE_IMU_WAKE_UP
-					sys_request_WOM(); // TODO: should queue shutdown and suspend itself instead
-//					main_imu_suspend(); // TODO: auto suspend, the device should configure WOM ASAP but it does not
-#endif
-#if CONFIG_SENSOR_USE_LOW_POWER_2
-					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER_2;
-#endif
-				}
-				else if (sensor_mode == SENSOR_SENSOR_MODE_LOW_NOISE && k_uptime_get() - last_data_time > 500) // No motion in last 500ms
-				{
-					LOG_INF("No motion from sensors in 500ms");
+					LOG_INF("No motion from sensors in %dms", CONFIG_SENSOR_LP_TIMEOUT);
 					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER;
 				}
+#if CONFIG_SENSOR_USE_LOW_POWER_2 || CONFIG_USE_IMU_TIMEOUT
+				int64_t imu_timeout = CLAMP(last_data_time - last_suspend_attempt_time, CONFIG_IMU_TIMEOUT_RAMP_MIN, CONFIG_IMU_TIMEOUT_RAMP_MAX); // Ramp timeout from last_data_time
+#endif
+#if CONFIG_SENSOR_USE_LOW_POWER_2
+				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER_2 && k_uptime_get() - last_data_time > imu_timeout) // No motion in ramp time
+					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER_2;
+#endif
+#if CONFIG_USE_ACTIVE_TIMEOUT
+				if (sensor_timeout < SENSOR_SENSOR_TIMEOUT_ACTIVITY && k_uptime_get() - last_data_time > CONFIG_ACTIVE_TIMEOUT_THRESHOLD) // higher priority than IMU timeout
+					sensor_timeout = SENSOR_SENSOR_TIMEOUT_ACTIVITY; // once triggered, will never be reset
+				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_ACTIVITY && k_uptime_get() - last_data_time > CONFIG_ACTIVE_TIMEOUT_DELAY)
+				{
+					LOG_INF("No motion from sensors in %dm", CONFIG_ACTIVE_TIMEOUT_DELAY/60000);
+#if CONFIG_SLEEP_ON_ACTIVE_TIMEOUT && CONFIG_USE_IMU_WAKE_UP
+					sys_request_WOM(true); // TODO: should queue shutdown and suspend itself instead
+//					main_imu_suspend(); // TODO: auto suspend, the device should configure WOM ASAP but it does not
+#elif CONFIG_SHUTDOWN_ON_ACTIVE_TIMEOUT && CONFIG_USER_SHUTDOWN
+					sys_request_system_off();
+#endif
+					sensor_timeout = SENSOR_SENSOR_TIMEOUT_ACTIVITY_ELAPSED; // only try to suspend once
+				}
+#endif
+#if CONFIG_USE_IMU_TIMEOUT && CONFIG_USE_IMU_WAKE_UP
+				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU && k_uptime_get() - last_data_time > imu_timeout) // No motion in ramp time
+				{
+					LOG_INF("No motion from sensors in %llds", imu_timeout/1000);
+					sys_request_WOM(false); // TODO: should queue shutdown and suspend itself instead
+//					main_imu_suspend(); // TODO: auto suspend, the device should configure WOM ASAP but it does not
+					sensor_timeout = SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED; // only try to suspend once
+				}
+#endif
 			}
 			else
 			{
-				if (sensor_mode == SENSOR_SENSOR_MODE_LOW_POWER_2)
-					last_lp2_time = k_uptime_get();
+				if (sensor_mode == SENSOR_SENSOR_MODE_LOW_POWER_2 || SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED)
+					last_suspend_attempt_time = k_uptime_get();
 				last_data_time = k_uptime_get();
+				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED) // Resetting IMU timeout
+					sensor_timeout = SENSOR_SENSOR_TIMEOUT_IMU;
 				sensor_mode = SENSOR_SENSOR_MODE_LOW_NOISE;
 			}
 
