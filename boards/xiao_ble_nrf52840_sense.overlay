@@ -64,10 +64,8 @@
 };
 
 &i2c0 {
-	compatible = "nordic,nrf-twim";
 	zephyr,concat-buf-size = <255>; // probable max for nrf52832
 	zephyr,flash-buf-max-size = <255>; // probable max for nrf52832
-	clock-frequency = <I2C_BITRATE_FAST>;
 
 	imu: imu@0 { // any address out of range (00, 7f, etc. will search all addresses and stored address first if available, specify an address here to search first otherwise
 		compatible = "i2c-device";
