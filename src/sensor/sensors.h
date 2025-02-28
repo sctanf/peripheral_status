@@ -31,8 +31,9 @@
 #include "imu/BMI270.h"
 #include "imu/ICM42688.h"
 #include "imu/ICM45686.h"
-#include "imu/LSM6DSV.h"
+#include "imu/LSM6DSM.h"
 #include "imu/LSM6DSO.h"
+#include "imu/LSM6DSV.h"
 
 #include "mag/AK09940.h"
 #include "mag/BMM150.h"
@@ -77,9 +78,9 @@ const sensor_imu_t *sensor_imus[] = {
 	&sensor_imu_icm42688,
 	&sensor_imu_icm45686,
 	&sensor_imu_none,
-	&sensor_imu_none,  // will not implement, too low quality
-	&sensor_imu_none,
-	&sensor_imu_lsm6dso,  // compatible with driver
+	&sensor_imu_none, // will not implement, too low quality
+	&sensor_imu_lsm6dsm,
+	&sensor_imu_lsm6dso, // compatible with driver
 	&sensor_imu_lsm6dso,
 	&sensor_imu_none,
 	&sensor_imu_lsm6dsv,
