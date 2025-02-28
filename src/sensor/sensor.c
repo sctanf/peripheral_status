@@ -754,7 +754,7 @@ void main_imu_thread(void)
 			}
 			else
 			{
-				if (sensor_mode == SENSOR_SENSOR_MODE_LOW_POWER_2 || SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED)
+				if (sensor_mode == SENSOR_SENSOR_MODE_LOW_POWER_2 || sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED)
 					last_suspend_attempt_time = k_uptime_get();
 				last_data_time = k_uptime_get();
 				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU_ELAPSED) // Resetting IMU timeout
