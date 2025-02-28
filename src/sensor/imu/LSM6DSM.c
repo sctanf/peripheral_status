@@ -322,23 +322,10 @@ void lsm6dsm_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO:
 
 	int err = i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_CTRL1, DSM_ODR_208Hz | DSM_FS_XL_8G); // set accel ODR and FS
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_CTRL6, DSM_OP_MODE_XL_NP | 0x08); // set accel perf mode, set offset weight to 2^-6 g/LSB
+	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_CTRL8, DSM_OP_MODE_XL_NP | 0x60); // set HPCF_XL to the lowest bandwidth
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_TAP_CFG, 0x10); // set SLOPE_FDS
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_WAKE_UP_THS, 0x01); // set threshold, 1 * 31.25 mg is ~31.25 mg
-	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_WAKE_UP_DUR, 0x10); // set 1 LSB threshold to FS_XL / 256 (31.25mg)
 	k_msleep(12); // need to wait for accel to settle
-
-	float accel_reference[3] = {0};
-	lsm_accel_read(dev_i2c, accel_reference); // need to read a reference value to set offset
-	int8_t offset[3] = {0};
-	for (int i = 0; i < 3; i++) // calculate offset
-	{
-		accel_reference[i] /= 2; // FS_XL_8G to FS_XL_16G
-		// dont invert, for some reason
-		accel_reference[i] *= 64; // offset is 2^-6 g/LSB
-		accel_reference[i] += accel_reference[i] < 0 ? -0.5f : 0.5f; // round
-		offset[i] = CLAMP(accel_reference[i], -127, 127); // value must be in the range -127 to 127
-	}
-	err |= i2c_burst_write_dt(dev_i2c, LSM6DSM_X_OFS_USR, offset, 3); // set offset correction
 
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_TAP_CFG, 0x90); // enable interrupts (keep SLOPE_FDS)
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSM_MD1_CFG, 0x20); // route wake-up to INT1
