@@ -13,6 +13,7 @@
 #define LSM6DSM_CTRL4                      0x13
 #define LSM6DSM_CTRL6                      0x15
 #define LSM6DSM_CTRL7                      0x16
+#define LSM6DSM_CTRL8                      0x17
 #define LSM6DSM_CTRL10                     0x19
 
 #define LSM6DSM_WAKE_UP_SRC                0x1B
@@ -24,7 +25,6 @@
 
 #define LSM6DSM_TAP_CFG                    0x58
 #define LSM6DSM_WAKE_UP_THS                0x5B
-#define LSM6DSM_WAKE_UP_DUR                0x5C
 #define LSM6DSM_MD1_CFG                    0x5E
 
 #define LSM6DSM_X_OFS_USR                  0x73
