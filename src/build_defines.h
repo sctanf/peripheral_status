@@ -93,24 +93,44 @@ static uint8_t get_server_constant_tracker_status(int status) __attribute__((unu
 #define SVR_STATUS_TIMED_OUT 5
 
 // does not exist in server enums yet
-#if CONFIG_BOARD_NRF52840DK_NRF52840
+#if CONFIG_BOARD_NRF52DK
 #define FW_BOARD 0
-#elif CONFIG_BOARD_SCTANF_SLIMENRF
+#elif CONFIG_BOARD_NRF54L15DK
 #define FW_BOARD 0
-#elif CONFIG_BOARD_SCTANF_SLIMENRF_2
+#elif CONFIG_BOARD_NRF5340DK
+#define FW_BOARD 0
+#elif CONFIG_BOARD_NRF52840DK
+#define FW_BOARD 0
+#elif CONFIG_BOARD_NRF52840DONGLE
+#define FW_BOARD 0
+#elif CONFIG_BOARD_SLIMENRF_R1
+#define FW_BOARD 0
+#elif CONFIG_BOARD_SLIMENRF_R2
 #define FW_BOARD 0
 #elif CONFIG_BOARD_SLIMENRF_R3 || CONFIG_BOARD_SLIMENRF_R3_UF2
 #define FW_BOARD 0
-#elif CONFIG_BOARD_SUPERMINI || CONFIG_BOARD_SUPERMINI_UF2
+#elif CONFIG_BOARD_SLIMEVRMINI_P1_UF2
 #define FW_BOARD 0
-#elif CONFIG_BOARD_XIAO || CONFIG_BOARD_XIAO_UF2
+#elif CONFIG_BOARD_SLIMEVRMINI_P2_UF2
+#define FW_BOARD 0
+#elif CONFIG_BOARD_SUPERMINI_UF2
+#define FW_BOARD 0
+#elif CONFIG_BOARD_XIAO_BLE
 #define FW_BOARD 0
 #else
 #define FW_BOARD 0
 #endif
 
 // does not exist in server enums yet
-#if CONFIG_SOC_NRF52840
+#if CONFIG_SOC_NRF54L15
+#define FW_MCU 0
+#elif CONFIG_SOC_NRF54L10
+#define FW_MCU 0
+#elif CONFIG_SOC_NRF54L05
+#define FW_MCU 0
+#elif CONFIG_SOC_NRF5340
+#define FW_MCU 0
+#elif CONFIG_SOC_NRF52840
 #define FW_MCU 0
 #elif CONFIG_SOC_NRF52833
 #define FW_MCU 0
@@ -184,9 +204,19 @@ static uint8_t get_server_constant_mag_id(int id)
 		return 0;
 	case MAG_AK09916:
 		return 0;
+	case MAG_AK09940:
+		return 0;
 	case MAG_BMM150:
 		return 0;
 	case MAG_BMM350:
+		return 0;
+	case MAG_IST8306:
+		return 0;
+	case MAG_IST8308:
+		return 0;
+	case MAG_IST8320:
+		return 0;
+	case MAG_IST8321:
 		return 0;
 	case MAG_LIS2MDL:
 		return 0;
