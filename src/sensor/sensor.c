@@ -715,7 +715,8 @@ void main_imu_thread(void)
 			// Check the IMU gyroscope
 			if (sensor_fusion->get_gyro_sanity() == 0 ? q_epsilon(q, last_q, 0.005) : q_epsilon(q, last_q, 0.05)) // Probably okay to use the constantly updating last_q
 			{
-				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER && k_uptime_get() - last_data_time > 500) // No motion in lp timeout
+				int64_t last_data_delta = k_uptime_get() - last_data_time;
+				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER && last_data_delta > 500) // No motion in lp timeout
 				{
 					LOG_INF("No motion from sensors in %dms", CONFIG_SENSOR_LP_TIMEOUT);
 					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER;
@@ -724,13 +725,16 @@ void main_imu_thread(void)
 				int64_t imu_timeout = CLAMP(last_data_time - last_suspend_attempt_time, CONFIG_IMU_TIMEOUT_RAMP_MIN, CONFIG_IMU_TIMEOUT_RAMP_MAX); // Ramp timeout from last_data_time
 #endif
 #if CONFIG_SENSOR_USE_LOW_POWER_2
-				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER_2 && k_uptime_get() - last_data_time > imu_timeout) // No motion in ramp time
+				if (sensor_mode < SENSOR_SENSOR_MODE_LOW_POWER_2 && last_data_delta > imu_timeout) // No motion in ramp time
 					sensor_mode = SENSOR_SENSOR_MODE_LOW_POWER_2;
 #endif
 #if CONFIG_USE_ACTIVE_TIMEOUT
-				if (sensor_timeout < SENSOR_SENSOR_TIMEOUT_ACTIVITY && k_uptime_get() - last_data_time > CONFIG_ACTIVE_TIMEOUT_THRESHOLD) // higher priority than IMU timeout
-					sensor_timeout = SENSOR_SENSOR_TIMEOUT_ACTIVITY; // once triggered, will never be reset
-				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_ACTIVITY && k_uptime_get() - last_data_time > CONFIG_ACTIVE_TIMEOUT_DELAY)
+				if (sensor_timeout < SENSOR_SENSOR_TIMEOUT_ACTIVITY && last_data_delta > CONFIG_ACTIVE_TIMEOUT_THRESHOLD) // higher priority than IMU timeout
+				{
+					LOG_INF("Switching to activity timeout");
+					sensor_timeout = SENSOR_SENSOR_TIMEOUT_ACTIVITY;
+				}
+				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_ACTIVITY && last_data_delta > CONFIG_ACTIVE_TIMEOUT_DELAY)
 				{
 					LOG_INF("No motion from sensors in %dm", CONFIG_ACTIVE_TIMEOUT_DELAY/60000);
 #if CONFIG_SLEEP_ON_ACTIVE_TIMEOUT && CONFIG_USE_IMU_WAKE_UP
@@ -743,7 +747,7 @@ void main_imu_thread(void)
 				}
 #endif
 #if CONFIG_USE_IMU_TIMEOUT && CONFIG_USE_IMU_WAKE_UP
-				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU && k_uptime_get() - last_data_time > imu_timeout) // No motion in ramp time
+				if (sensor_timeout == SENSOR_SENSOR_TIMEOUT_IMU && last_data_delta > imu_timeout) // No motion in ramp time
 				{
 					LOG_INF("No motion from sensors in %llds", imu_timeout/1000);
 					sys_request_WOM(false); // TODO: should queue shutdown and suspend itself instead
