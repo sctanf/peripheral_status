@@ -382,13 +382,13 @@ void sensor_shutdown(void)  // Communicate all imus to shut down
 	}
 }
 
-void sensor_setup_WOM(void) {
-	int err = sensor_init();  // try initialization if possible
-	if (!err) {
-		sensor_imu->setup_WOM(&sensor_imu_dev);
-	} else {
-		LOG_ERR("Failed to configure IMU wake up");
-	}
+uint8_t sensor_setup_WOM(void)
+{
+	int err = sensor_init(); // try initialization if possible
+	if (!err)
+		return sensor_imu->setup_WOM(&sensor_imu_dev);
+	LOG_ERR("Failed to configure IMU wake up");
+	return 0;
 }
 
 void sensor_fusion_invalidate(void) {

@@ -78,7 +78,7 @@ void bmi_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3]);
 void bmi_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3]);
 float bmi_temp_read(const struct i2c_dt_spec *dev_i2c);
 
-void bmi_setup_WOM(const struct i2c_dt_spec *dev_i2c);
+uint8_t bmi_setup_WOM(const struct i2c_dt_spec *dev_i2c);
 
 extern const sensor_imu_t sensor_imu_bmi270;
 

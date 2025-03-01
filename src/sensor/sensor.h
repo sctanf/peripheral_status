@@ -39,7 +39,7 @@ void sensor_retained_read(void);
 void sensor_retained_write(void);
 
 void sensor_shutdown(void);
-void sensor_setup_WOM(void);
+uint8_t sensor_setup_WOM(void);
 
 void sensor_fusion_invalidate(void);
 
@@ -81,7 +81,7 @@ typedef struct sensor_imu {
 	void (*gyro_read)(const struct i2c_dt_spec*, float[3]); // deg/s
 	float (*temp_read)(const struct i2c_dt_spec*); // deg C
 
-	void (*setup_WOM)(const struct i2c_dt_spec*);
+	uint8_t (*setup_WOM)(const struct i2c_dt_spec*);
 
 	int (*ext_setup)(uint8_t, uint8_t); // setup external magnetometer
 	int (*fifo_process_ext)(uint16_t, uint8_t*, float[3], float[3], uint8_t*); // g, deg/s, raw magnetometer data

@@ -2,6 +2,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <hal/nrf_gpio.h>
 
 #include "LSM6DSV.h"
 
@@ -329,7 +330,7 @@ float lsm_temp_read(const struct i2c_dt_spec *dev_i2c)
 	return temp;
 }
 
-void lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: could use HP instead of W_OFS_USR
+uint8_t lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: could use HP instead of W_OFS_USR
 { // TODO: should be off by the time WOM will be setup
 //	i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL1, ODR_OFF); // set accel off
 //	i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_CTRL2, ODR_OFF); // set gyro off
@@ -358,6 +359,7 @@ void lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: could use HP inst
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_MD1_CFG, 0x20); // route wake-up to INT1
 	if (err)
 		LOG_ERR("I2C error");
+	return NRF_GPIO_PIN_PULLUP << 4 | NRF_GPIO_PIN_SENSE_LOW; // active low
 }
 
 int lsm_ext_setup(uint8_t addr, uint8_t reg)
