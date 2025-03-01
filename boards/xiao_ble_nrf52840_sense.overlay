@@ -82,3 +82,8 @@
 &nfct {
 	status = "disabled";
 };
+
+&lsm6ds3tr_c {
+	status = "disabled";
+	/delete-property/ irq-gpios;
+};
