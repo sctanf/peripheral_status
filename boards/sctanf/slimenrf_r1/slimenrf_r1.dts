@@ -72,7 +72,7 @@
 	zephyr,user {
 		dock-gpios = <&gpio0 8 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
 		chgstat-gpios = <&gpio0 6 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
-		-gpios = <&gpio0 11 (GPIO_PULL_UP|GPIO_ACTIVE_LOW)>;
+		int0-gpios = <&gpio0 11 0>;
 		led-gpios = <&gpio0 25 (GPIO_OPEN_SOURCE | (1 << 9))>;
 	};
 
