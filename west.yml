@@ -16,12 +16,6 @@ manifest:
       path: SlimeVR-Tracker-nRF
       revision: master
 
-      # Stacked-SmolSlime
-    - name: Stacked-SmolSlime
-      url: https://github.com/LyallUlric/Stacked-SmolSlime.git
-      path: Stacked-SmolSlime
-      revision: master
-
     # vqf-c
     - name: vqf-c
       url: https://github.com/sctanf/vqf-c.git
