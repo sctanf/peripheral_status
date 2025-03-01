@@ -57,7 +57,7 @@
 	};
 
 	zephyr,user {
-		int0-gpios = <&gpio0 11 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		int0-gpios = <&gpio0 11 0>;
 		led-gpios = <&gpio0 17 (GPIO_OPEN_DRAIN|GPIO_ACTIVE_LOW)>;
 	};
 
