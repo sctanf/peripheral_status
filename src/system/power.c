@@ -7,6 +7,7 @@
 #include "connection/esb.h"
 
 #include <zephyr/drivers/gpio.h>
+#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/sys/poweroff.h>
 #include <zephyr/sys/reboot.h>
 #include <hal/nrf_gpio.h>
@@ -97,6 +98,18 @@ static void set_regulator(enum sys_regulator regulator)
 #endif
 }
 
+static void wait_for_logging(void)
+{
+	// only UART backend is disabled usually
+	const struct log_backend *uart_backend = log_backend_get_by_name("log_backend_uart");
+	bool uart_active = log_backend_is_active(uart_backend);
+	if (uart_active)
+	{
+		LOG_INF("Delayed for UART backend");
+		k_msleep(200);
+	}
+}
+
 #if IMU_INT_EXISTS && CONFIG_DELAY_SLEEP_ON_STATUS
 static int64_t system_off_timeout = 0;
 #endif
@@ -137,6 +150,7 @@ void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what d
 	LOG_INF("Configured IMU wake up GPIO");
 	LOG_INF("Powering off nRF");
 	retained_update();
+	wait_for_logging();
 	sys_poweroff();
 #else
 	LOG_WRN("IMU wake up GPIO does not exist");
@@ -157,6 +171,7 @@ void sys_request_system_off(void) // TODO: add timeout
 	// Set system off
 	LOG_INF("Powering off nRF");
 	retained_update();
+	wait_for_logging();
 	sys_poweroff();
 }
 
