@@ -102,6 +102,8 @@ static void wait_for_logging(void)
 {
 	// only UART backend is disabled usually
 	const struct log_backend *uart_backend = log_backend_get_by_name("log_backend_uart");
+	if (!uart_backend)
+		return;
 	bool uart_active = log_backend_is_active(uart_backend);
 	if (uart_active)
 	{
