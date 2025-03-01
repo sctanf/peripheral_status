@@ -85,7 +85,7 @@ float imu_none_temp_read(const struct i2c_dt_spec* dev_i2c) {
 
 uint8_t imu_none_setup_WOM(const struct i2c_dt_spec *dev_i2c)
 {
-	LOG_DBG("imu_none_setup_WOM, sensor has no IMU or IMU has no wake up interrupt");
+	LOG_DBG("imu_none_setup_WOM, sensor has no IMU or IMU has no wake up support");
 	return 0;
 }
 
