@@ -77,7 +77,7 @@ const sensor_imu_t *sensor_imus[] = {
 	&sensor_imu_none,
 	&sensor_imu_icm42688,
 	&sensor_imu_icm45686,
-	&sensor_imu_none,
+	&sensor_imu_none, // will not implement, does not have FIFO
 	&sensor_imu_lsm6dsm, // compatible with driver (unfortunately)
 	&sensor_imu_lsm6dsm,
 	&sensor_imu_lsm6dso, // compatible with driver
