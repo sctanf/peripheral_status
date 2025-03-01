@@ -74,7 +74,7 @@ static const struct device *gpio_dev = DEVICE_DT_GET(DT_NODELABEL(gpio0));
 
 void configure_sense_pins(void)
 {
-	// Configure dock interrupt
+	// Configure dock sense
 #if DOCK_EXISTS
 	if (dock_read())
 	{
@@ -86,24 +86,24 @@ void configure_sense_pins(void)
 		nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, dock_gpios), NRF_GPIO_PIN_PULLUP); // Still works
 		nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, dock_gpios), NRF_GPIO_PIN_SENSE_LOW);
 	}
-	LOG_INF("Configured dock interrupt");
+	LOG_INF("Configured dock sense");
 #endif
-	// Configure chgstat interrupt
+	// Configure chgstat sense
 #if CHG_EXISTS
 	nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, chg_gpios), NRF_GPIO_PIN_PULLUP);
 	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, chg_gpios), chg_read() ? NRF_GPIO_PIN_SENSE_HIGH : NRF_GPIO_PIN_SENSE_LOW);
-	LOG_INF("Configured chg interrupt");
+	LOG_INF("Configured chg sense");
 #endif
 #if STBY_EXISTS
 	nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, stby_gpios), NRF_GPIO_PIN_PULLUP);
 	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, stby_gpios), stby_read() ? NRF_GPIO_PIN_SENSE_HIGH : NRF_GPIO_PIN_SENSE_LOW);
-	LOG_INF("Configured stby interrupt");
+	LOG_INF("Configured stby sense");
 #endif
-	// Configure sw0 interrupt
+	// Configure sw0 sense
 #if BUTTON_EXISTS // Alternate button if available to use as "reset key"
 	nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios), NRF_GPIO_PIN_PULLUP);
 	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(DT_ALIAS(sw0), gpios), NRF_GPIO_PIN_SENSE_LOW);
-	LOG_INF("Configured sw0 interrupt");
+	LOG_INF("Configured sw0 sense");
 #endif
 }
 

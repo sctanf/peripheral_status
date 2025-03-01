@@ -36,7 +36,7 @@ K_THREAD_DEFINE(power_thread_id, 1024, power_thread, NULL, NULL, NULL, 6, 0, 0);
 #if DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, int0_gpios)
 #define IMU_INT_EXISTS true
 #else
-#warning "IMU interrupt GPIO does not exist"
+#warning "IMU wake up GPIO does not exist"
 #endif
 #if DT_NODE_HAS_PROP(ZEPHYR_USER_NODE, dcdc_gpios)
 #define DCDC_EN_EXISTS true
@@ -139,7 +139,7 @@ void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what d
 	retained_update();
 	sys_poweroff();
 #else
-	LOG_WRN("IMU interrupt GPIO does not exist");
+	LOG_WRN("IMU wake up GPIO does not exist");
 	LOG_WRN("IMU wake up not available");
 #endif
 }
