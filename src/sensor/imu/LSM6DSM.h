@@ -14,7 +14,6 @@
 #define LSM6DSM_CTRL6                      0x15
 #define LSM6DSM_CTRL7                      0x16
 #define LSM6DSM_CTRL8                      0x17
-#define LSM6DSM_CTRL10                     0x19
 
 #define LSM6DSM_WAKE_UP_SRC                0x1B
 
@@ -26,8 +25,6 @@
 #define LSM6DSM_TAP_CFG                    0x58
 #define LSM6DSM_WAKE_UP_THS                0x5B
 #define LSM6DSM_MD1_CFG                    0x5E
-
-#define LSM6DSM_X_OFS_USR                  0x73
 
 #define DSM_FS_G_2000DPS 0x0C //0bxxxx1100
 
@@ -64,7 +61,7 @@ int lsm6dsm_update_odr(const struct i2c_dt_spec *dev_i2c, float accel_time, floa
 uint16_t lsm6dsm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len);
 uint16_t lsm6dsm_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint16_t len);
 
-void lsm6dsm_setup_WOM(const struct i2c_dt_spec *dev_i2c);
+uint8_t lsm6dsm_setup_WOM(const struct i2c_dt_spec *dev_i2c);
 
 int lsm6dsm_ext_setup(uint8_t ext_addr, uint8_t ext_reg);
 

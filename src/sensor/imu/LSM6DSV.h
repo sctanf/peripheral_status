@@ -88,7 +88,7 @@ void lsm_accel_read(const struct i2c_dt_spec *dev_i2c, float a[3]);
 void lsm_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3]);
 float lsm_temp_read(const struct i2c_dt_spec *dev_i2c);
 
-void lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c);
+uint8_t lsm_setup_WOM(const struct i2c_dt_spec *dev_i2c);
 
 int lsm_ext_setup(uint8_t ext_addr, uint8_t ext_reg);
 int lsm_fifo_process_ext(uint16_t index, uint8_t *data, float a[3], float g[3], uint8_t *raw_m);

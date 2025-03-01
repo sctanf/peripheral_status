@@ -12,6 +12,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <hal/nrf_gpio.h>
 
 #include "ICM42688.h"
 #include "sensor/sensor_none.h"
@@ -374,7 +375,7 @@ float icm_temp_read(const struct i2c_dt_spec *dev_i2c)
 	return temp;
 }
 
-void icm_setup_WOM(const struct i2c_dt_spec *dev_i2c)
+uint8_t icm_setup_WOM(const struct i2c_dt_spec *dev_i2c)
 {
 	uint8_t interrupts;
 	int err = i2c_reg_read_byte_dt(dev_i2c, ICM42688_INT_STATUS, &interrupts); // clear reset done int flag
@@ -394,6 +395,7 @@ void icm_setup_WOM(const struct i2c_dt_spec *dev_i2c)
 	err |= i2c_reg_write_byte_dt(dev_i2c, ICM42688_SMD_CONFIG, 0x01); // enable WOM feature
 	if (err)
 		LOG_ERR("I2C error");
+	return NRF_GPIO_PIN_PULLUP << 4 | NRF_GPIO_PIN_SENSE_LOW; // active low
 }
 
 const sensor_imu_t sensor_imu_icm42688 = {

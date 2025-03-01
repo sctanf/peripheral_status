@@ -2,6 +2,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <hal/nrf_gpio.h>
 
 #include "BMI270.h"
 #include "BMI270_firmware.h"
@@ -346,7 +347,7 @@ float bmi_temp_read(const struct i2c_dt_spec *dev_i2c)
 	return temp;
 }
 
-void bmi_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: seems too sensitive? try to match icm at least // TODO: half working.
+uint8_t bmi_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: seems too sensitive? try to match icm at least // TODO: half working.
 {
 	uint8_t config[4] = {0};
 	uint16_t *ptr = (uint16_t *)config; // bmi is little endian
@@ -365,6 +366,7 @@ void bmi_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: seems too sensiti
 	if (err)
 		LOG_ERR("I2C error");
 	// LOG_DBG("WOM setup complete");
+	return NRF_GPIO_PIN_PULLUP << 4 | NRF_GPIO_PIN_SENSE_LOW; // active low
 }
 
 // write_config_file function from https://github.com/zephyrproject-rtos/zephyr/blob/main/drivers/sensor/bosch/bmi270/bmi270.c

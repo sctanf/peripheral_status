@@ -2,6 +2,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/i2c.h>
+#include <hal/nrf_gpio.h>
 
 #include "ICM45686.h"
 #include "sensor/sensor_none.h"
@@ -370,7 +371,7 @@ float icm45_temp_read(const struct i2c_dt_spec *dev_i2c)
 	return temp;
 }
 
-void icm45_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: check if working
+uint8_t icm45_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: check if working
 {
 	uint8_t interrupts;
 	uint8_t ireg_buf[5];
@@ -397,6 +398,7 @@ void icm45_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: check if workin
 	err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_INT1_CONFIG1, 0x0E); // route WOM interrupt
 	if (err)
 		LOG_ERR("I2C error");
+	return NRF_GPIO_PIN_PULLUP << 4 | NRF_GPIO_PIN_SENSE_LOW; // active low
 }
 
 const sensor_imu_t sensor_imu_icm45686 = {

@@ -120,10 +120,6 @@ void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what d
 	}
 #endif
 	configure_system_off(); // Common subsystem shutdown and prepare sense pins
-	// Configure WOM interrupt
-	nrf_gpio_cfg_input(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, int0_gpios), NRF_GPIO_PIN_PULLUP);
-	nrf_gpio_cfg_sense_set(NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, int0_gpios), NRF_GPIO_PIN_SENSE_LOW);
-	LOG_INF("Configured IMU interrupt");
 	sensor_retained_write();
 #if WOM_USE_DCDC // In case DCDC is more efficient in the 10-100uA range
 	set_regulator(SYS_REGULATOR_DCDC); // Make sure DCDC is selected
@@ -131,8 +127,14 @@ void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what d
 	set_regulator(SYS_REGULATOR_LDO); // Switch to LDO
 #endif
 	// Set system off
-	sensor_setup_WOM(); // enable WOM feature
+	uint8_t pin_config = sensor_setup_WOM(); // enable WOM feature
 	LOG_INF("Configured IMU wake up");
+	// Configure WOM interrupt
+	uint32_t int0_gpios = NRF_DT_GPIOS_TO_PSEL(ZEPHYR_USER_NODE, int0_gpios);
+	LOG_INF("Wake up GPIO pin: %u, config: %u", int0_gpios, pin_config);
+	nrf_gpio_cfg_input(int0_gpios, (pin_config >> 4) & 0xF);
+	nrf_gpio_cfg_sense_set(int0_gpios, pin_config & 0xF);
+	LOG_INF("Configured IMU wake up GPIO");
 	LOG_INF("Powering off nRF");
 	retained_update();
 	sys_poweroff();
