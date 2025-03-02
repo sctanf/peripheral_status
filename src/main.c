@@ -31,7 +31,7 @@
 #define DFU_DBL_RESET_MEM 0x20007F7C
 #define DFU_DBL_RESET_APP 0x4ee5677e
 
-uint32_t* dbl_reset_mem = ((uint32_t*)DFU_DBL_RESET_MEM); // retained
+static uint32_t *dbl_reset_mem = ((uint32_t *)DFU_DBL_RESET_MEM); // retained
 
 LOG_MODULE_REGISTER(main, LOG_LEVEL_INF);
 
@@ -58,10 +58,6 @@ int main(void) {
 //	start_time = k_uptime_get(); // Need to get start time for imu startup delay
 	set_led(SYS_LED_PATTERN_ON, SYS_LED_PRIORITY_BOOT); // Boot LED
 
-#if ADAFRUIT_BOOTLOADER && !(IGNORE_RESET && BUTTON_EXISTS) // Using Adafruit bootloader
-	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
-#endif
-
 	uint8_t reboot_counter = reboot_counter_read();
 	bool booting_from_shutdown = !reboot_counter && (reset_pin_reset || button_read()); // 0 means from user shutdown or failed ram validation
 
@@ -85,7 +81,10 @@ int main(void) {
 		reboot_counter++;
 		reboot_counter_write(reboot_counter);
 		LOG_INF("Reset count: %u", reboot_counter);
-		k_msleep(1000);  // Wait before clearing counter and continuing
+#if ADAFRUIT_BOOTLOADER && !(IGNORE_RESET && BUTTON_EXISTS) // Using Adafruit bootloader, skip DFU if reset button is in use
+		(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
+#endif
+		k_msleep(1000); // Wait before clearing counter and continuing
 	}
 	reboot_counter_write(100);
 	if (!reset_pin_reset && !button_read() && reset_mode == 0) // Only need to check once, if the button is pressed again an interrupt is triggered from before
