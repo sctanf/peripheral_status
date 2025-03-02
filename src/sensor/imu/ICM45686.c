@@ -285,7 +285,7 @@ uint16_t icm45_fifo_read(const struct i2c_dt_spec *dev_i2c, uint8_t *data, uint1
 				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG0, 0x40 | 0b000111); // set FIFO Stream mode, set FIFO depth to 2K bytes
 				err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_FIFO_CONFIG3, 0x0F); // begin FIFO stream, hires, a+g
 			}
-			else
+			else if (!fifo_primed)
 			{
 				LOG_INF("Current header: 0x%02X", data[i * PACKET_SIZE]);
 			}
