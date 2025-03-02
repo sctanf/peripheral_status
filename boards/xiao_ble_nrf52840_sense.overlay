@@ -1,3 +1,27 @@
+&i2c0_default {
+	group1 {
+		bias-disable;
+	};
+};
+
+&i2c0_sleep {
+	group1 {
+		bias-disable;
+	};
+};
+
+&i2c1_default {
+	group1 {
+		bias-disable;
+	};
+};
+
+&i2c1_sleep {
+	group1 {
+		bias-disable;
+	};
+};
+
 &pwm0_default {
 	group1 {
 		psels = <NRF_PSEL(PWM_OUT0, 0, 26)>,
