@@ -387,13 +387,9 @@ void lsm_ext_read(const struct i2c_dt_spec *dev_i2c, uint8_t *raw_m)
 		LOG_ERR("I2C error");
 }
 
-static bool passthrough_enabled = false;
-
 int lsm_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough)
 {
 	int err = 0;
-	if (passthrough_enabled == passthrough)
-		return 0;
 	if (passthrough)
 	{
 		err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_FUNC_CFG_ACCESS, 0x40); // switch to sensor hub registers
@@ -406,7 +402,6 @@ int lsm_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough)
 		err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_MASTER_CONFIG, 0x00); // passthrough off
 		err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_FUNC_CFG_ACCESS, 0x00); // switch to normal registers
 	}
-	passthrough_enabled = passthrough;
 	if (err)
 		LOG_ERR("I2C error");
 	return 0;

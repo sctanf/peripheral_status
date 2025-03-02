@@ -371,15 +371,13 @@ void sensor_retained_write(void)  // TODO: move to sys?
 
 void sensor_shutdown(void)  // Communicate all imus to shut down
 {
-	int err = sensor_init();  // try initialization if possible
-	if (!err) {
-		sensor_imu->shutdown(&sensor_imu_dev);
-	} else {
-		LOG_ERR("Failed to shutdown sensors");
-	}
-	if (mag_available) {
+	int err = sensor_init(); // try initialization if possible
+	if (mag_available) // try to shutdown magnetometer first (in case of passthrough)
 		sensor_mag->shutdown(&sensor_mag_dev);
-	}
+	if (!err)
+		sensor_imu->shutdown(&sensor_imu_dev);
+	else
+		LOG_ERR("Failed to shutdown sensors");
 }
 
 uint8_t sensor_setup_WOM(void)
@@ -425,10 +423,9 @@ int main_imu_init(void) {
 			return err;
 		}
 	}
-	sensor_imu->shutdown(&sensor_imu_dev);  // TODO: is this needed?
-	if (mag_available) {
-		sensor_mag->shutdown(&sensor_mag_dev);  // TODO: is this needed?
-	}
+	if (mag_available) // shutdown magnetometer first (in case of passthrough)
+		sensor_mag->shutdown(&sensor_mag_dev); // TODO: is this needed?
+	sensor_imu->shutdown(&sensor_imu_dev); // TODO: is this needed?
 
 	float clock_actual_rate = 0;
 #if CONFIG_USE_SENSOR_CLOCK
@@ -449,17 +446,14 @@ int main_imu_init(void) {
 	err = sensor_imu->init(&sensor_imu_dev, clock_actual_rate, accel_initial_time, gyro_initial_time, &accel_actual_time, &gyro_actual_time);
 	LOG_INF("Accelerometer initial rate: %.2fHz", 1.0 / (double)accel_actual_time);
 	LOG_INF("Gyrometer initial rate: %.2fHz", 1.0 / (double)gyro_actual_time);
-	if (err < 0) {
+	if (err < 0)
 		return err;
-	}
-	// 55-66ms to wait, get chip ids, and setup icm (50ms spent waiting for accel and
-	// gyro to start)
-	if (mag_available && mag_enabled) {
-		err = sensor_mag->init(
-			&sensor_mag_dev,
-			mag_initial_time,
-			&mag_actual_time
-		);  // configure with ~200Hz ODR
+// 55-66ms to wait, get chip ids, and setup icm (50ms spent waiting for accel and gyro to start)
+	if (mag_available && mag_enabled)
+	{
+		if (use_ext_fifo)
+			sensor_imu->ext_passthrough(&sensor_imu_dev, true); // reenable passthrough
+		err = sensor_mag->init(&sensor_mag_dev, mag_initial_time, &mag_actual_time); // configure with ~200Hz ODR
 		LOG_INF("Magnetometer initial rate: %.2fHz", 1.0 / (double)mag_actual_time);
 		if (err < 0) {
 			return err;
