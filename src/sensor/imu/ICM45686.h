@@ -31,7 +31,7 @@
 #define ICM45686_TMST_WOM_CONFIG           0x23
 
 #define ICM45686_RTC_CONFIG                0x26
-#define ICM45686_IOC_PAD_SCENARIO          0x2F
+#define ICM45686_IOC_PAD_SCENARIO_AUX_OVRD 0x30
 #define ICM45686_IOC_PAD_SCENARIO_OVRD     0x31 // see application note
 
 #define ICM45686_REG_MISC1                 0x35
