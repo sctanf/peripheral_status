@@ -15,8 +15,6 @@
 #define LSM6DSM_CTRL7                      0x16
 #define LSM6DSM_CTRL8                      0x17
 
-#define LSM6DSM_WAKE_UP_SRC                0x1B
-
 #define LSM6DSM_FIFO_STATUS1               0x3A
 #define LSM6DSM_FIFO_STATUS3               0x3C
 

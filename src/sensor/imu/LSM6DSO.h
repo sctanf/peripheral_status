@@ -21,10 +21,7 @@
 #define LSM6DSO_TAP_CFG0                   0x56
 #define LSM6DSO_TAP_CFG2                   0x58
 #define LSM6DSO_WAKE_UP_THS                0x5B
-#define LSM6DSO_WAKE_UP_DUR                0x5C
 #define LSM6DSO_MD1_CFG                    0x5E
-
-#define LSM6DSO_X_OFS_USR                  0x73
 
 #define LSM6DSO_FIFO_DATA_OUT_TAG          0x78
 

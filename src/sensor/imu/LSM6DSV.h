@@ -25,8 +25,6 @@
 #define LSM6DSV_WAKE_UP_THS                0x5B
 #define LSM6DSV_MD1_CFG                    0x5E
 
-#define LSM6DSV_X_OFS_USR                  0x73
-
 #define LSM6DSV_FIFO_DATA_OUT_TAG          0x78
 
 // Sensor Hub
