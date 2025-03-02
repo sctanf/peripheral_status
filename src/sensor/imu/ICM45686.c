@@ -401,6 +401,23 @@ uint8_t icm45_setup_WOM(const struct i2c_dt_spec *dev_i2c) // TODO: check if wor
 	return NRF_GPIO_PIN_PULLUP << 4 | NRF_GPIO_PIN_SENSE_LOW; // active low
 }
 
+static bool passthrough_enabled = false;
+
+int icm45_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough) // TODO: might need IOC_PAD_SCENARIO_AUX_OVRD instead
+{
+	int err = 0;
+	if (passthrough_enabled == passthrough)
+		return 0;
+	if (passthrough)
+		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO, 0x05); // aux1 on, passthrough on
+	else
+		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO, 0x01); // aux1 on, passthrough off
+	passthrough_enabled = passthrough;
+	if (err)
+		LOG_ERR("I2C error");
+	return 0;
+}
+
 const sensor_imu_t sensor_imu_icm45686 = {
 	*icm45_init,
 	*icm45_shutdown,
@@ -418,5 +435,5 @@ const sensor_imu_t sensor_imu_icm45686 = {
 	*imu_none_ext_setup,
 	*imu_none_fifo_process_ext,
 	*imu_none_ext_read,
-	*imu_none_ext_passthrough
+	*icm45_ext_passthrough
 };
