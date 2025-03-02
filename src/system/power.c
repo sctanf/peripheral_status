@@ -14,6 +14,11 @@
 
 #include "power.h"
 
+#define DFU_DBL_RESET_MEM 0x20007F7C
+#define DFU_DBL_RESET_APP 0x4ee5677e
+
+static uint32_t *dbl_reset_mem = ((uint32_t *)DFU_DBL_RESET_MEM); // retained
+
 enum sys_regulator {
 	SYS_REGULATOR_DCDC,
 	SYS_REGULATOR_LDO
@@ -28,6 +33,9 @@ static bool power_init = false;
 static bool device_plugged = false;
 
 LOG_MODULE_REGISTER(power, LOG_LEVEL_INF);
+
+static void disable_DFU_thread(void);
+K_THREAD_DEFINE(disable_DFU_thread_id, 128, disable_DFU_thread, NULL, NULL, NULL, 6, 0, 500); // disable DFU if the system is running correctly
 
 static void power_thread(void);
 K_THREAD_DEFINE(power_thread_id, 1024, power_thread, NULL, NULL, NULL, 6, 0, 0);
@@ -51,6 +59,8 @@ static const struct gpio_dt_spec ldo_en = GPIO_DT_SPEC_GET(ZEPHYR_USER_NODE, ldo
 #else
 #pragma message "LDO enable GPIO does not exist"
 #endif
+
+#define ADAFRUIT_BOOTLOADER CONFIG_BUILD_OUTPUT_UF2
 
 // TODO: the gpio sense is weird, maybe the device will turn back on immediately after shutdown or after (attempting to) enter WOM
 // TODO: there should be a better system of how to handle all system_off cases and all the sense pins
@@ -153,6 +163,9 @@ void sys_request_WOM(bool force) // TODO: if IMU interrupt does not exist what d
 	LOG_INF("Powering off nRF");
 	retained_update();
 	wait_for_logging();
+#if ADAFRUIT_BOOTLOADER // if using Adafruit bootloader, always skip dfu for next boot
+	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
+#endif
 	sys_poweroff();
 #else
 	LOG_WRN("IMU wake up GPIO does not exist");
@@ -174,6 +187,9 @@ void sys_request_system_off(void) // TODO: add timeout
 	LOG_INF("Powering off nRF");
 	retained_update();
 	wait_for_logging();
+#if ADAFRUIT_BOOTLOADER // if using Adafruit bootloader, always skip dfu for next boot
+	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
+#endif
 	sys_poweroff();
 }
 
@@ -185,6 +201,10 @@ void sys_request_system_reboot(void) // TODO: add timeout
 	// Set system reboot
 	LOG_INF("Rebooting nRF");
 	retained_update();
+	wait_for_logging();
+#if ADAFRUIT_BOOTLOADER // if using Adafruit bootloader, always skip dfu for next boot
+	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
+#endif
 	sys_reboot(SYS_REBOOT_COLD);
 }
 
@@ -193,6 +213,13 @@ bool vin_read(void) // blocking
 	while (!power_init)
 		k_usleep(1); // wait for first battery read
 	return plugged;
+}
+
+static void disable_DFU_thread(void)
+{
+#if ADAFRUIT_BOOTLOADER
+	(*dbl_reset_mem) = DFU_DBL_RESET_APP; // Skip DFU
+#endif
 }
 
 static void power_thread(void)
