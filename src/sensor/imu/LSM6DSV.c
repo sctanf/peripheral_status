@@ -5,6 +5,7 @@
 #include <hal/nrf_gpio.h>
 
 #include "LSM6DSV.h"
+#include "sensor/sensor_none.h"
 
 #define PACKET_SIZE 7
 
@@ -34,8 +35,8 @@ int lsm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float accel_ti
 	err |= i2c_reg_write_byte_dt(dev_i2c, LSM6DSV_FIFO_CTRL4, 0x06); // enable Continuous mode
 	if (err)
 		LOG_ERR("I2C error");
-	if (use_ext_fifo)
-		err |= lsm_ext_init(dev_i2c, ext_addr, ext_reg);
+//	if (use_ext_fifo)
+//		err |= lsm_ext_init(dev_i2c, ext_addr, ext_reg);
 	return (err < 0 ? err : 0);
 }
 
@@ -423,8 +424,8 @@ const sensor_imu_t sensor_imu_lsm6dsv = {
 
 	*lsm_setup_WOM,
 	
-	*lsm_ext_setup,
-	*lsm_fifo_process_ext,
-	*lsm_ext_read,
+	*imu_none_ext_setup,
+	*imu_none_fifo_process_ext,
+	*imu_none_ext_read,
 	*lsm_ext_passthrough
 };

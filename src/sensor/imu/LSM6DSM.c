@@ -6,6 +6,7 @@
 
 #include "LSM6DSM.h"
 #include "LSM6DSV.h" // Common functions
+#include "sensor/sensor_none.h"
 
 #define PACKET_SIZE 7 // first byte is pattern, only 6 actual sample bytes
 
@@ -36,8 +37,8 @@ int lsm6dsm_init(const struct i2c_dt_spec *dev_i2c, float clock_rate, float acce
 	err |= lsm6dsm_update_odr(dev_i2c, accel_time, gyro_time, accel_actual_time, gyro_actual_time);
 	if (err)
 		LOG_ERR("I2C error");
-	if (use_ext_fifo)
-		err |= lsm_ext_init(dev_i2c, ext_addr, ext_reg);
+//	if (use_ext_fifo)
+//		err |= lsm_ext_init(dev_i2c, ext_addr, ext_reg);
 	return (err < 0 ? err : 0);
 }
 
@@ -365,8 +366,8 @@ const sensor_imu_t sensor_imu_lsm6dsm = {
 
 	*lsm6dsm_setup_WOM,
 	
-	*lsm6dsm_ext_setup,
-	*lsm_fifo_process_ext, // TODO:
-	*lsm_ext_read, // TODO:
-	*lsm_ext_passthrough // TODO:
+	*imu_none_ext_setup,
+	*imu_none_fifo_process_ext,
+	*imu_none_ext_read,
+	*lsm_ext_passthrough
 };
