@@ -409,9 +409,9 @@ int icm45_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough) /
 	if (passthrough_enabled == passthrough)
 		return 0;
 	if (passthrough)
-		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO_AUX_OVRD, 0x08); // aux1 on, passthrough on
+		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO_AUX_OVRD, 0x18); // AUX1_MODE_OVRD, AUX1 in I2CM Bypass, AUX1_ENABLE_OVRD, AUX1 enabled
 	else
-		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO_AUX_OVRD, 0x00); // aux1 on, passthrough off
+		err |= i2c_reg_write_byte_dt(dev_i2c, ICM45686_IOC_PAD_SCENARIO_AUX_OVRD, 0x00); // disable overrides
 	passthrough_enabled = passthrough;
 	if (err)
 		LOG_ERR("I2C error");
