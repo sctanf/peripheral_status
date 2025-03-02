@@ -31,7 +31,8 @@
 #define ICM45686_TMST_WOM_CONFIG           0x23
 
 #define ICM45686_RTC_CONFIG                0x26
-#define ICM45686_IOC_PAD_SCENARIO_OVRD     0x31
+#define ICM45686_IOC_PAD_SCENARIO          0x2F
+#define ICM45686_IOC_PAD_SCENARIO_OVRD     0x31 // see application note
 
 #define ICM45686_REG_MISC1                 0x35
 
@@ -147,6 +148,8 @@ void icm45_gyro_read(const struct i2c_dt_spec *dev_i2c, float g[3]);
 float icm45_temp_read(const struct i2c_dt_spec *dev_i2c);
 
 uint8_t icm45_setup_WOM(const struct i2c_dt_spec *dev_i2c);
+
+int icm45_ext_passthrough(const struct i2c_dt_spec *dev_i2c, bool passthrough);
 
 extern const sensor_imu_t sensor_imu_icm45686;
 
